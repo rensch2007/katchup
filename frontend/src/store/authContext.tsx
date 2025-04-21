@@ -1,0 +1,189 @@
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+type User = {
+  id: string;
+  username: string;
+  email: string;
+  unreadNotifications: number;
+  rooms?: string[];
+};
+
+type AuthContextType = {
+  user: User | null;
+  token: string | null;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  fetchUserData: () => Promise<void>;
+  error: string | null;
+  clearError: () => void;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const API_URL = 'http://localhost:5001/api';
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load token from storage
+  useEffect(() => {
+    const loadToken = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('token');
+        if (storedToken) {
+          setToken(storedToken);
+          await fetchUserData(storedToken);
+        }
+      } catch (err) {
+        console.error('Failed to load auth token:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadToken();
+  }, []);
+
+  const fetchUserData = async (currentToken = token) => {
+    if (!currentToken) return;
+
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${currentToken}`,
+        },
+      });
+
+      const data = await response.json();
+      
+      console.log('Fetch user data response:', data);
+
+      if (data.success) {
+        setUser(data.data);
+      } else {
+        // Token might be invalid, clear it
+        await AsyncStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        setError(data.error || 'Session expired. Please login again.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch user data:', err);
+      await AsyncStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
+    }
+  };
+
+  const login = async (username: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('Logging in with:', { username, password });
+      
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+      
+      console.log('Login response:', data);
+
+      if (data.success) {
+        await AsyncStorage.setItem('token', data.token);
+        setToken(data.token);
+        setUser(data.user);
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (username: string, email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      const data = await response.json();
+      
+      console.log('Register response:', data);
+
+      if (data.success) {
+        await AsyncStorage.setItem('token', data.token);
+        setToken(data.token);
+        setUser(data.user);
+      } else {
+        setError(data.error || 'Registration failed');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
+
+  const clearError = () => {
+    setError(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        login,
+        register,
+        logout,
+        fetchUserData,
+        error,
+        clearError,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

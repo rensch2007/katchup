@@ -2,7 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const authRoutes = require('./routes/auth');
 
 // Load environment variables
 dotenv.config();
@@ -14,6 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
@@ -22,11 +26,12 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-// Routes
+// Simple test route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Katchup API' });
 });
 
+// Health check route
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok',
@@ -35,8 +40,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Auth routes
+// Use routes
 app.use('/api/auth', authRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

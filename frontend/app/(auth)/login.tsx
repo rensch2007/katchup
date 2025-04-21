@@ -1,93 +1,97 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../src/store/authStore';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
+import { router } from 'expo-router';
+import { useAuth } from '../../src/store/authContext';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const { login, error, clearError, isLoading } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const setAuth = useAuthStore((state: { setAuth: any; }) => state.setAuth);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!username || !password) {
+      Alert.alert('Error', 'Please enter both username and password');
       return;
     }
 
-    setLoading(true);
+    console.log('Attempting login with:', { username, password: '****' });
+    
     try {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
-      }
-
-      setAuth(data.token, data.user);
-      router.replace('/(app)');
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
+      await login(username, password);
+      
+      // Login function will handle state updates and navigation
+    } catch (err) {
+      console.error('Login submission error:', err);
     }
+  };
+
+  const goToRegister = () => {
+    router.push('/(auth)/register');
   };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-1 px-6 pt-10">
-        <Text className="text-3xl font-bold text-red-600 mb-8">Login to Katchup</Text>
-        
-        <View className="mb-4">
-          <Text className="text-gray-700 mb-2">Email</Text>
-          <TextInput
-            className="bg-white p-4 rounded-lg border border-gray-200"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
+      <View className="p-6 flex-1 justify-center">
+        <Text className="text-3xl font-bold text-red-600 text-center mb-10">
+          Katchup
+        </Text>
 
-        <View className="mb-6">
-          <Text className="text-gray-700 mb-2">Password</Text>
-          <TextInput
-            className="bg-white p-4 rounded-lg border border-gray-200"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-        </View>
+        <View className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <Text className="text-2xl font-bold text-center mb-6">Login</Text>
 
-        <Pressable
-          className={`bg-red-600 p-4 rounded-lg ${loading ? 'opacity-70' : ''}`}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white text-center font-bold text-lg">Login</Text>
+          {error && (
+            <Text className="text-red-500 text-center mb-4">{error}</Text>
           )}
-        </Pressable>
 
-        <Pressable 
-          className="mt-4"
-          onPress={() => router.push('/(auth)/register')}
-        >
-          <Text className="text-center text-gray-600">
-            Don't have an account? <Text className="text-red-600 font-bold">Sign up</Text>
+          <View className="mb-4">
+            <Text className="text-gray-600 mb-2">Username</Text>
+            <TextInput
+              className="bg-gray-100 p-3 rounded-lg"
+              placeholder="Enter your username"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View className="mb-6">
+            <Text className="text-gray-600 mb-2">Password</Text>
+            <TextInput
+              className="bg-gray-100 p-3 rounded-lg"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+
+          <Pressable
+            className={`bg-red-500 p-4 rounded-lg ${isLoading ? 'opacity-70' : ''}`}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white text-center font-bold text-lg">
+                Login
+              </Text>
+            )}
+          </Pressable>
+        </View>
+
+        <Pressable className="p-2" onPress={goToRegister}>
+          <Text className="text-gray-600 text-center">
+            Don't have an account?{' '}
+            <Text className="text-red-500 font-bold">Register</Text>
           </Text>
         </Pressable>
       </View>
