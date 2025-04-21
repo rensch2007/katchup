@@ -1,5 +1,9 @@
+// Update this file: frontend/app/(app)/index.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Text, View, Pressable, ActivityIndicator, SafeAreaView } from 'react-native';
+import { useAuthStore } from '../../src/store/authStore';
+import LogoutButton from '../../src/components/LogoutButton';
 
 interface ConnectionStatus {
   status: string;
@@ -8,6 +12,7 @@ interface ConnectionStatus {
 }
 
 export default function Index() {
+  const user = useAuthStore((state) => state.user);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     status: 'Checking...',
     database: 'Checking...',
@@ -46,13 +51,11 @@ export default function Index() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-1 items-center justify-center px-6">
-        {/* Simple Tailwind Test */}
-        <View className="bg-red-300 w-full p-4 mb-4 rounded-lg">
-          <Text className="text-white text-center font-bold">
-            If this is red with white text, Tailwind is working!
-          </Text>
-        </View>
-
+        {/* Welcome Message */}
+        <Text className="text-2xl font-bold text-gray-800 mb-2">
+          Welcome, {user?.username}!
+        </Text>
+        
         {/* App Title */}
         <Text className="text-4xl font-bold text-red-600 mb-8">
           Katchup
@@ -105,6 +108,9 @@ export default function Index() {
             {loading ? 'Checking...' : 'Check Connection'}
           </Text>
         </Pressable>
+
+        {/* Logout Button */}
+        <LogoutButton />
       </View>
     </SafeAreaView>
   );
