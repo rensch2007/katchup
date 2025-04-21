@@ -5,6 +5,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@/store/*": [
+        "./src/store/*"
       ]
     }
   },
@@ -13,6 +16,8 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ]
 }
