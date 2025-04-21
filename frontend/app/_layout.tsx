@@ -1,44 +1,51 @@
-// Update your app/_layout.tsx with additional debugging:
-
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { useAuthStore } from '../src/store/authStore';
+import { AuthProvider, useAuth } from '../src/store/authContext';
+import { RoomProvider } from '../src/store/roomContext';
+import { NotificationProvider } from '../src/store/notificationContext';
 import './global.css';
 
-export default function RootLayout() {
-  const { isAuthenticated, isLoading, restoreToken } = useAuthStore();
-  const segments = useSegments();
+// This component handles routing based on authentication state
+function AuthRedirect() {
+  const { user, token, isLoading } = useAuth();
   const router = useRouter();
-
+  const segments = useSegments();
+  
   useEffect(() => {
-    restoreToken();
-  }, []);
+    // Skip redirect if still loading
+    if (isLoading) return;
 
-  useEffect(() => {
-    console.log('Auth state changed:', { isAuthenticated, isLoading }); // Debug log
-    console.log('Current segments:', segments); // Debug log
-    
     const inAuthGroup = segments[0] === '(auth)';
-
-    if (!isLoading) {
-      if (!isAuthenticated && !inAuthGroup) {
-        console.log('Redirecting to login');
+    
+    if (!user || !token) {
+      // If the user is not logged in and not on the auth screen, redirect to login
+      if (!inAuthGroup) {
         router.replace('/(auth)/login');
-      } else if (isAuthenticated && inAuthGroup) {
-        console.log('Redirecting to app');
-        router.replace('/(app)');
+      }
+    } else {
+      // If the user is logged in and on the auth screen, redirect to the app
+      if (inAuthGroup) {
+        router.replace('/');
       }
     }
-  }, [isAuthenticated, segments, isLoading]);
+  }, [user, token, segments, isLoading]);
 
-  if (isLoading) {
-    return null; // Or a loading screen
-  }
+  return null;
+}
 
+export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(app)" options={{ headerShown: false }} />
-    </Stack>
+    <AuthProvider>
+      <RoomProvider>
+        <NotificationProvider>
+          <AuthRedirect />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(app)" />
+            <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
+          </Stack>
+        </NotificationProvider>
+      </RoomProvider>
+    </AuthProvider>
   );
 }
