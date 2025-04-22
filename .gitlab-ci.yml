@@ -1,6 +1,7 @@
 stages:
   - build
   - deploy
+  - notify
 
 variables:
   DOCKER_IMAGE: kylesung0520/katchup
@@ -29,5 +30,29 @@ deploy_to_ec2:
           -p 5001:5001 \
           $DOCKER_IMAGE:latest
       "
+  only:
+    - KATCHUP-9-set-up-ci-cd
+
+notify_discord_success:
+  stage: notify
+  script:
+    - |
+      curl -H "Content-Type: application/json" \
+        -X POST \
+        -d "{\"content\": \"✅ *CI/CD 성공: \`$CI_PROJECT_NAME\` 프로젝트의 \`$CI_COMMIT_REF_NAME\` 브랜치 파이프라인 완료.*\"}" \
+        $DISCORD_WEBHOOK_URL
+  when: on_success
+  only:
+    - KATCHUP-9-set-up-ci-cd
+
+notify_discord_failure:
+  stage: notify
+  script:
+    - |
+      curl -H "Content-Type: application/json" \
+        -X POST \
+        -d "{\"content\": \"❌ *CI/CD 실패: \`$CI_PROJECT_NAME\` 프로젝트의 \`$CI_COMMIT_REF_NAME\` 브랜치 파이프라인 실패.*\"}" \
+        $DISCORD_WEBHOOK_URL
+  when: on_failure
   only:
     - KATCHUP-9-set-up-ci-cd
