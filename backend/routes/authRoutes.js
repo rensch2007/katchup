@@ -137,7 +137,8 @@ router.get('/me', authMiddleware, async (req, res) => {
         username: user.username,
         email: user.email,
         unreadNotifications: unreadCount,
-        rooms: user.rooms
+        rooms: user.rooms,
+        defaultRoom: user.defaultRoom
       }
     });
   } catch (error) {
