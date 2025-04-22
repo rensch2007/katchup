@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
+  profileImage: {
+    type: String,
+    default: null
+  },
   notifications: [{
     type: {
       type: String,
@@ -47,12 +51,8 @@ const UserSchema = new mongoose.Schema({
   rooms: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room'
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+  }]
+}, { timestamps: true });
 
 // Hash password before saving
 UserSchema.pre('save', async function(next) {

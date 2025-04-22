@@ -13,6 +13,7 @@ import { useAuth } from '../src/store/authContext';
 import { useRoom } from '../src/store/roomContext';
 import { useNotification } from '../src/store/notificationContext';
 import RoomCard from '../src/components/rooms/RoomCard';
+import ProfileButton from '../src/components/ProfileButton';
 
 export default function Index() {
   const { user, token, logout } = useAuth();
@@ -61,9 +62,9 @@ export default function Index() {
         {/* App Header */}
         <View className="flex-row justify-between items-center mb-6">
           <Text className="text-3xl font-bold text-red-600">Katchup</Text>
-          
           {user && (
             <View className="flex-row space-x-2">
+              <ProfileButton />
               <Pressable
                 onPress={goToNotifications}
                 className="relative"
@@ -79,7 +80,6 @@ export default function Index() {
                   </View>
                 )}
               </Pressable>
-              
               <Pressable
                 onPress={handleLogout}
                 className="bg-gray-100 flex-1 justify-center text-center px-4 py-0 rounded-lg"

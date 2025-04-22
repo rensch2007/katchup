@@ -20,6 +20,14 @@ export default function AppLayout() {
           headerBackTitle: 'Back',
         }}
       />
+      <Stack.Screen 
+        name="profile"
+        options={{
+          headerShown: true,
+          headerTitle: 'My Profile',
+          headerBackTitle: 'Back',
+        }}
+      />
     </Stack>
   );
 }
