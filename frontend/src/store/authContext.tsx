@@ -7,6 +7,7 @@ type User = {
   email: string;
   unreadNotifications: number;
   rooms?: string[];
+  defaultRoom?: string;
 };
 
 type AuthContextType = {
@@ -16,9 +17,10 @@ type AuthContextType = {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  fetchUserData: () => Promise<void>;
+  fetchUserData: (currentToken?: string) => Promise<void>;
   error: string | null;
   clearError: () => void;
+  userLoaded: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userLoaded, setUserLoaded] = useState(false);
 
   // Load token from storage
   useEffect(() => {
@@ -44,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Failed to load auth token:', err);
       } finally {
         setIsLoading(false);
+        setUserLoaded(true); // whether it worked or not
       }
     };
 
@@ -51,23 +55,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const fetchUserData = async (currentToken = token) => {
-    if (!currentToken) return;
-
+    if (!currentToken) {
+      setUserLoaded(true);
+      return;
+    }
+  
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
         headers: {
           Authorization: `Bearer ${currentToken}`,
         },
       });
-
+  
       const data = await response.json();
-      
       console.log('Fetch user data response:', data);
-
+  
       if (data.success) {
         setUser(data.data);
       } else {
-        // Token might be invalid, clear it
         await AsyncStorage.removeItem('token');
         setToken(null);
         setUser(null);
@@ -78,16 +83,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.removeItem('token');
       setToken(null);
       setUser(null);
+    } finally {
+      setUserLoaded(true);
     }
   };
+  
 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     setError(null);
-
+  
     try {
       console.log('Logging in with:', { username, password });
-      
+  
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -95,15 +103,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({ username, password }),
       });
-
+  
       const data = await response.json();
-      
       console.log('Login response:', data);
-
+  
       if (data.success) {
         await AsyncStorage.setItem('token', data.token);
         setToken(data.token);
-        setUser(data.user);
+  
+        // ✅ immediately fetch full user data
+        await fetchUserData(data.token);
       } else {
         setError(data.error || 'Login failed');
       }
@@ -112,8 +121,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
+      setUserLoaded(true);
     }
   };
+  
 
   const register = async (username: string, email: string, password: string) => {
     setIsLoading(true);
@@ -129,7 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       const data = await response.json();
-      
       console.log('Register response:', data);
 
       if (data.success) {
@@ -144,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
+      setUserLoaded(true);
     }
   };
 
@@ -154,6 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
     } catch (err) {
       console.error('Logout error:', err);
+    } finally {
+      setUserLoaded(true);
     }
   };
 
@@ -173,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchUserData,
         error,
         clearError,
+        userLoaded,
       }}
     >
       {children}
