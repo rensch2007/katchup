@@ -22,7 +22,7 @@ router.post('/', authMiddleware, async (req, res) => {
     
     // Add room to user's rooms
     await User.findByIdAndUpdate(req.user.id, {
-      $push: { rooms: room._id }
+      $push: { rooms: room._id }, $set:{ defaultRoom: room._id }
     });
     
     res.status(201).json({

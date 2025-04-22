@@ -12,14 +12,7 @@ export default function AppLayout() {
       <Stack.Screen name="create-room" />
       <Stack.Screen name="join-room" />
       <Stack.Screen name="notifications" />
-      <Stack.Screen 
-        name="room/[id]"
-        options={{
-          headerShown: true,
-          headerTitle: 'Room Details',
-          headerBackTitle: 'Back',
-        }}
-      />
+      <Stack.Screen name="room/[id]"/>
     </Stack>
   );
 }
