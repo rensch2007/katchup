@@ -6,22 +6,13 @@ stages:
 
 variables:
   DOCKER_IMAGE: kylesung0520/katchup
-  START_TIME: "$(date +%s)"
 
 notify_discord_start:
   stage: notify_start
   script:
-    - echo "CI Start Time: $(date)"
-    - echo "START_TIME=$(date +%s)" > start_time.txt
-    - curl -H "Content-Type: application/json" \
-      -X POST \
-      -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL
+    - 'curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL'
   rules:
-    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
-  artifacts:
-    paths:
-      - start_time.txt
-    expire_in: 1 hour
+    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 build_backend:
   stage: build
@@ -34,7 +25,7 @@ build_backend:
     - docker build -t "$DOCKER_IMAGE:latest" .
     - docker push "$DOCKER_IMAGE:latest"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 deploy_to_ec2:
   stage: deploy
@@ -56,24 +47,17 @@ deploy_to_ec2:
           kylesung0520/katchup:latest
       '
   rules:
-    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 notify_discord:
   stage: notify_end
   script:
     - |
-      END_TIME=$(date +%s)
-      START_TIME=$(cat start_time.txt)
-      DURATION=$((END_TIME - START_TIME))
-      MINUTES=$((DURATION / 60))
-      SECONDS=$((DURATION % 60))
-      STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다.\n⏱ 소요 시간: ${MINUTES}분 ${SECONDS}초"
+      STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다."
       if [[ "$CI_JOB_STATUS" == "failed" ]]; then
-        STATUS_MSG="❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다.\n⏱ 소요 시간: ${MINUTES}분 ${SECONDS}초"
+        STATUS_MSG="❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다."
       fi
       curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$STATUS_MSG\"}" $DISCORD_WEBHOOK_URL
   when: always
-  only:
-    - KATCHUP-9-set-up-ci-cd
   rules:
-    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
