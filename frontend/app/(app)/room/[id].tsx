@@ -9,13 +9,14 @@ import {
   Share,
   Alert,
   FlatList,
+  Image
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useRoom } from '../../../src/store/roomContext';
 import { useAuth } from '../../../src/store/authContext';
 import UserSearchInput from '../../../src/components/rooms/UserSearchInput';
 import * as Clipboard from 'expo-clipboard';
-
+import { useNotification } from '../../../src/store/notificationContext';
 
 type User = {
   _id: string;
@@ -31,7 +32,7 @@ export default function RoomDetailScreen() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [localLoading, setLocalLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
-
+  const { unreadCount } = useNotification();
   useEffect(() => {
     const loadRoomData = async () => {
       if (!id) {
@@ -60,8 +61,17 @@ export default function RoomDetailScreen() {
     loadRoomData();
   }, [id, token]); // 👈 depend on BOTH id and token
 
+
+  const goToNotifications = () => {
+    router.push('/(app)/notifications');
+  };
+
   const handleCreateRoom = () => {
     router.push('/(app)/create-room');
+  };
+
+  const handleSelectRoom = () => {
+    router.push('/(app)/select-room');
   };
 
   const handleJoinRoom = () => {
@@ -144,17 +154,17 @@ export default function RoomDetailScreen() {
 
   const handleShareRoomCode = async () => {
     if (!currentRoom) return;
-  
+
     try {
       await Clipboard.setStringAsync(currentRoom.code);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1000); 
+      setTimeout(() => setCopied(false), 1000);
     } catch (error) {
       console.error('Clipboard copy error:', error);
     }
   };
-  
-  
+
+
 
   // Show loading state while fetching data
   if (localLoading || isLoading) {
@@ -187,6 +197,50 @@ export default function RoomDetailScreen() {
 
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 p-4">
+        {/* App Header */}
+        <View className="flex-row justify-between items-center mb-6">
+          <View className="flex-row items-end">
+            <Text className="text-3xl font-bold text-red-600">katchup</Text>
+            <Image
+              source={require('../../../assets/images/katchup_bottle_slim_only.png')}
+              style={{
+                width: 30,
+                height: 34,
+                marginLeft: -7,
+                marginBottom: 1,
+              }}
+              resizeMode="contain"
+            />
+          </View>
+
+
+          {user && (
+            <View className="flex-row space-x-2">
+              <Pressable
+                onPress={goToNotifications}
+                className="relative"
+              >
+                <View className="p-2">
+                  <Text className="text-lg">🔔</Text>
+                </View>
+                {unreadCount > 0 && (
+                  <View className="absolute top-0 right-0 bg-red-500 rounded-full w-5 h-5 items-center justify-center">
+                    <Text className="text-white text-xs font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+
+              <Pressable
+                onPress={handleLogout}
+                className="bg-gray-100 flex-1 justify-center text-center px-4 py-0 rounded-lg"
+              >
+                <Text>Logout</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
         <Text className="text-2xl font-bold text-center mb-2">{currentRoom.name}</Text>
         <View className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <View className="flex-row justify-between items-center mb-4">
@@ -256,14 +310,24 @@ export default function RoomDetailScreen() {
 
         {/* Invite Users Form */}
         {!showInviteForm ? (
-          <Pressable
-            className="bg-red-500 p-4 rounded-lg mb-4"
-            onPress={() => setShowInviteForm(true)}
-          >
-            <Text className="text-white text-center font-bold">
-              Invite Users
-            </Text>
-          </Pressable>
+          <View className="flex-row justify-end space-x-2 mt-4">
+            <Pressable
+              className="bg-red-500 p-4 rounded-lg mb-4"
+              onPress={() => setShowInviteForm(true)}
+            >
+              <Text className="text-white text-center font-bold">
+                Invite Users
+              </Text>
+            </Pressable>
+            <Pressable
+              className="bg-red-500 p-4 rounded-lg mb-4"
+              onPress={handleSelectRoom}
+            >
+              <Text className="text-white text-center font-bold">
+                Select Room
+              </Text>
+            </Pressable>
+          </View>
         ) : (
           <View className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <Text className="text-gray-800 font-medium text-lg mb-3">
@@ -304,40 +368,10 @@ export default function RoomDetailScreen() {
                   <Text className="text-white">Send Invites</Text>
                 )}
               </Pressable>
+
             </View>
           </View>
         )}
-        {/* Rooms List or Login/Create/Join Options */}
-        <View className="flex-row space-x-2 mt-4">
-          <Pressable
-            className="bg-red-500 p-3 rounded-lg flex-1"
-            onPress={handleCreateRoom}
-          >
-            <Text className="text-white text-center font-medium">
-              Create Room
-            </Text>
-          </Pressable>
-          <Pressable
-            className="bg-blue-500 p-3 rounded-lg flex-1"
-            onPress={handleJoinRoom}
-          >
-            <Text className="text-white text-center font-medium">
-              Join Room
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={handleLogout}
-            className="bg-gray-500 p-3 rounded-lg flex-1">
-            <Text className='text-white text-center font-medium'>Logout</Text>
-          </Pressable>
-        </View>
-        {/* Back Button */}
-        <Pressable
-          className="p-4 mt-2"
-          onPress={() => router.replace('/')}
-        >
-          <Text className="text-gray-500 text-center">Back to Home</Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );

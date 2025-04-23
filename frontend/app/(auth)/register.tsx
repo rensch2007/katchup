@@ -55,7 +55,7 @@ export default function RegisterScreen() {
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 p-6">
         <Text className="text-3xl font-bold text-red-600 text-center mb-10 mt-10">
-          Katchup
+          katchup
         </Text>
 
         <View className="bg-white rounded-lg shadow-sm p-6 mb-6">

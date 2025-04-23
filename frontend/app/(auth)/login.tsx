@@ -41,7 +41,7 @@ export default function LoginScreen() {
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="p-6 flex-1 justify-center">
         <Text className="text-3xl font-bold text-red-600 text-center mb-10">
-          Katchup
+          katchup
         </Text>
 
         <View className="bg-white rounded-lg shadow-sm p-6 mb-6">
