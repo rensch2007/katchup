@@ -8,16 +8,18 @@ variables:
   DOCKER_IMAGE: kylesung0520/katchup
   START_TIME: "$(date +%s)"
 
+before_script:
+  - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+
 notify_discord_start:
   stage: notify_start
   script:
-    - |
-      echo "CI Start Time: $(date)"
-      echo "export START_TIME=$(date +%s)" > start_time.txt
-      curl -H "Content-Type: application/json" \
-        -X POST \
-        -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포 파이프라인이 시작되었습니다.\"}" \
-        $DISCORD_WEBHOOK_URL
+    - echo "CI Start Time: $(date)"
+    - echo "START_TIME=$(date +%s)" > start_time.txt
+    - curl -H "Content-Type: application/json" \
+      -X POST \
+      -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포 파이프라인이 시작되었습니다.\"}" \
+      $DISCORD_WEBHOOK_URL
   only:
     - KATCHUP-9-set-up-ci-cd
   artifacts:
@@ -30,8 +32,6 @@ build_backend:
   image: docker:latest
   services:
     - docker:dind
-  before_script:
-    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
   script:
     - cd backend
     - docker build -t $DOCKER_IMAGE:latest .
@@ -54,7 +54,7 @@ deploy_to_ec2:
   only:
     - KATCHUP-9-set-up-ci-cd
 
-notify_discord_end:
+notify_discord:
   stage: notify_end
   script:
     - |
@@ -63,30 +63,12 @@ notify_discord_end:
       DURATION=$((END_TIME - START_TIME))
       MINUTES=$((DURATION / 60))
       SECONDS=$((DURATION % 60))
-      curl -H "Content-Type: application/json" \
-        -X POST \
-        -d "{\"content\": \"✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다.\n⏱ 소요 시간: ${MINUTES}분 ${SECONDS}초\"}" \
-        $DISCORD_WEBHOOK_URL
-  when: on_success
-  only:
-    - KATCHUP-9-set-up-ci-cd
-  dependencies:
-    - notify_discord_start
-
-notify_discord_failure:
-  stage: notify_end
-  script:
-    - |
-      END_TIME=$(date +%s)
-      START_TIME=$(cat start_time.txt)
-      DURATION=$((END_TIME - START_TIME))
-      MINUTES=$((DURATION / 60))
-      SECONDS=$((DURATION % 60))
-      curl -H "Content-Type: application/json" \
-        -X POST \
-        -d "{\"content\": \"❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다.\n⏱ 소요 시간: ${MINUTES}분 ${SECONDS}초\"}" \
-        $DISCORD_WEBHOOK_URL
-  when: on_failure
+      STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다.\n⏱ 소요 시간: ${MINUTES}분 ${SECONDS}초"
+      if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+        STATUS_MSG="❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다.\n⏱ 소요 시간: ${MINUTES}분 ${SECONDS}초"
+      fi
+      curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$STATUS_MSG\"}" $DISCORD_WEBHOOK_URL
+  when: always
   only:
     - KATCHUP-9-set-up-ci-cd
   dependencies:
