@@ -8,9 +8,6 @@ variables:
   DOCKER_IMAGE: kylesung0520/katchup
   START_TIME: "$(date +%s)"
 
-before_script:
-  - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-
 notify_discord_start:
   stage: notify_start
   script:
@@ -18,10 +15,9 @@ notify_discord_start:
     - echo "START_TIME=$(date +%s)" > start_time.txt
     - curl -H "Content-Type: application/json" \
       -X POST \
-      -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포 파이프라인이 시작되었습니다.\"}" \
-      $DISCORD_WEBHOOK_URL
-  only:
-    - KATCHUP-9-set-up-ci-cd
+      -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
   artifacts:
     paths:
       - start_time.txt
@@ -33,26 +29,34 @@ build_backend:
   services:
     - docker:dind
   script:
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     - cd backend
-    - docker build -t $DOCKER_IMAGE:latest .
-    - docker push $DOCKER_IMAGE:latest
-  only:
-    - KATCHUP-9-set-up-ci-cd
+    - docker build -t "$DOCKER_IMAGE:latest" .
+    - docker push "$DOCKER_IMAGE:latest"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
 
 deploy_to_ec2:
   stage: deploy
   script:
-    - ssh -o StrictHostKeyChecking=no ec2-user@43.202.220.249 "
-        docker pull $DOCKER_IMAGE:latest &&
-        docker stop katchup-backend || true &&
-        docker rm katchup-backend || true &&
-        docker run -d --name katchup-backend \
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/gitlab-ec2-openssh
+    - chmod 600 ~/.ssh/gitlab-ec2-openssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H 43.202.220.249 >> ~/.ssh/known_hosts
+    - >
+      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@43.202.220.249 '
+        docker pull kylesung0520/katchup:latest &&
+        if [ "$(docker ps -a -q -f name=katchup-backend)" ]; then
+          docker stop katchup-backend && docker rm katchup-backend;
+        fi &&
+        sudo docker run -d --name katchup-backend \
           --env-file /home/ec2-user/katchup-backend/.env \
           -p 5001:5001 \
-          $DOCKER_IMAGE:latest
-      "
-  only:
-    - KATCHUP-9-set-up-ci-cd
+          kylesung0520/katchup:latest
+      '
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
 
 notify_discord:
   stage: notify_end
@@ -71,5 +75,5 @@ notify_discord:
   when: always
   only:
     - KATCHUP-9-set-up-ci-cd
-  dependencies:
-    - notify_discord_start
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "KATCHUP-9-set-up-ci-cd"'
