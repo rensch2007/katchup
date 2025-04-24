@@ -1,0 +1,57 @@
+stages:
+  - notify_start
+  - build
+  - deploy
+  - notify_end
+
+variables:
+  DOCKER_IMAGE: kylesung0520/katchup
+
+notify_discord_start:
+  stage: notify_start
+  script:
+    - 'curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL'
+
+build_backend:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin > /dev/null 2>&1
+    - cd backend
+    - docker build -t "$DOCKER_IMAGE:latest" . > /dev/null 2>&1
+    - docker push "$DOCKER_IMAGE:latest" > /dev/null 2>&1
+
+deploy_to_ec2:
+  stage: deploy
+  script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/gitlab-ec2-openssh
+    - chmod 600 ~/.ssh/gitlab-ec2-openssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
+    - >
+      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@$EC2_IP '
+        docker pull kylesung0520/katchup:latest &&
+        if [ "$(docker ps -a -q -f name=katchup-backend)" ]; then
+          docker stop katchup-backend && docker rm katchup-backend;
+        fi &&
+        docker rmi kylesung0520/katchup:latest || true &&
+        docker pull kylesung0520/katchup:latest &&
+        sudo docker run -d --name katchup-backend \
+          --env-file /home/ec2-user/katchup-backend/.env \
+          -p 5001:5001 \
+          kylesung0520/katchup:latest
+      '
+
+notify_discord:
+  stage: notify_end
+  script:
+    - |
+      STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다."
+      if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+        STATUS_MSG="❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다."
+      fi
+      curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$STATUS_MSG\"}" $DISCORD_WEBHOOK_URL
+  when: always
