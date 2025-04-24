@@ -231,7 +231,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data.success) {
         await fetchRooms(); // Refresh room list
-        return data.data;
+        return data;
       } else {
         setError(data.error || 'Failed to join room');
         return null;

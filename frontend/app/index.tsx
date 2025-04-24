@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Text,
-  View,
-  Pressable,
-  ActivityIndicator,
-  SafeAreaView,
-  FlatList,
-  Alert,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../src/store/authContext';
 import { useRoom } from '../src/store/roomContext';
@@ -18,14 +10,7 @@ export default function Index() {
   const { user, token, logout } = useAuth();
   const { rooms, fetchRooms, isLoading: roomsLoading } = useRoom();
   const { unreadCount } = useNotification();
-  const [loading, setLoading] = useState(true);
-  const [backendStatus, setBackendStatus] = useState({
-    status: 'Checking...',
-    database: 'Checking...',
-    error: null as string | null
-  });
-
-  
+  const [checkingRedirect, setCheckingRedirect] = useState(true);
 
   useEffect(() => {
     if (token) {
@@ -33,28 +18,25 @@ export default function Index() {
     }
   }, [token]);
 
-  const handleCreateRoom = () => {
-    router.push('/(app)/create-room');
-  };
-
-  const handleJoinRoom = () => {
-    router.push('/(app)/join-room');
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      Alert.alert('Success', 'You have been logged out');
-    } catch (error) {
-      console.error('Logout error:', error);
-      Alert.alert('Error', 'Something went wrong during logout');
+  useEffect(() => {
+    if (user) {
+      if (user.defaultRoom) {
+        router.replace(`/(app)/room/${user.defaultRoom}`);
+      } else {
+        setCheckingRedirect(false); // no default room, show select-room
+      }
     }
-  };
+  }, [user]);
 
-  const goToNotifications = () => {
-    router.push('/(app)/notifications');
-  };
+  if (checkingRedirect) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#ef4444" />
+      </SafeAreaView>
+    );
+  }
 
+  // No default room, show select-room
   return (
     <SelectRoom />
   );

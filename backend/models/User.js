@@ -21,6 +21,11 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
+  defaultRoom: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Room',
+    default: null
+  },
   notifications: [{
     type: {
       type: String,
