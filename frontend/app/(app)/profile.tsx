@@ -1,46 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../src/store/authContext';
 
 const ProfilePage = () => {
-  const [profile, setProfile] = useState({ username: '', email: '', profileImage: '' });
+  const { user, fetchUserData, userLoaded, updateProfile } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ username: '', email: '', profileImage: '', password: '', currentPassword: '' });
-  const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    AsyncStorage.getItem('token').then(t => {
-      if (t) {
-        setToken(t);
-        fetchProfile(t);
-      }
-    });
-  }, []);
-
-  const fetchProfile = async (token: string) => {
-    try {
-      setLoading(true);
-      setError('');
-      const res = await axios.get('http://localhost:5001/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfile(res.data.data);
+    if (!userLoaded) fetchUserData();
+    if (user) {
       setForm({
         ...form,
-        username: res.data.data.username,
-        email: res.data.data.email,
-        profileImage: res.data.data.profileImage || ''
+        username: user.username,
+        email: user.email,
+        profileImage: user.profileImage || ''
       });
-    } catch (e: any) {
-      setError('Failed to load profile information.');
-    } finally {
-      setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLoaded, user]);
 
   const handleChange = (name: string, value: string) => {
     setForm({ ...form, [name]: value });
@@ -51,14 +32,11 @@ const ProfilePage = () => {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.put('http://localhost:5001/api/users/me', form, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfile(res.data.data);
+      await updateProfile(form);
       setSuccess('Profile updated!');
       setEditMode(false);
     } catch (e: any) {
-      setError(e.response?.data?.error || 'Update failed');
+      setError(e.message || 'Update failed');
     } finally {
       setLoading(false);
     }
@@ -73,11 +51,11 @@ const ProfilePage = () => {
       {!editMode ? (
         <View className="items-center">
           <Image
-            source={{ uri: profile.profileImage || 'https://placehold.co/100x100?text=No+Image' }}
+            source={{ uri: user?.profileImage || 'https://placehold.co/100x100?text=No+Image' }}
             className="w-24 h-24 rounded-full mb-2"
           />
-          <Text className="font-semibold">{profile.username}</Text>
-          <Text className="text-gray-500 mb-4">{profile.email}</Text>
+          <Text className="font-semibold">{user?.username}</Text>
+          <Text className="text-gray-500 mb-4">{user?.email}</Text>
           <TouchableOpacity className="bg-blue-500 px-4 py-2 rounded" onPress={() => setEditMode(true)}>
             <Text className="text-white">Edit Info</Text>
           </TouchableOpacity>

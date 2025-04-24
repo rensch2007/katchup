@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
+  profileImage: {
+    type: String,
+    default: null
+  },
   defaultRoom: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',

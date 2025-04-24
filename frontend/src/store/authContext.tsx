@@ -21,6 +21,7 @@ type AuthContextType = {
   error: string | null;
   clearError: () => void;
   userLoaded: boolean;
+  updateProfile: (form: { username: string; email: string; profileImage: string; password?: string; currentPassword?: string }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -174,6 +175,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
   };
 
+  const updateProfile = async (form: { username: string; email: string; profileImage: string; password?: string; currentPassword?: string }) => {
+    setIsLoading(true);
+    setError(null);
+    setUserLoaded(false);
+    try {
+      if (!token) throw new Error('No token');
+      const response = await fetch(`${API_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.data);
+      } else {
+        setError(data.error || 'Update failed');
+      }
+      // 최신 정보 반영
+      await fetchUserData(token);
+    } catch (err: any) {
+      setError(err.message || 'Update failed');
+    } finally {
+      setIsLoading(false);
+      setUserLoaded(true);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -187,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         clearError,
         userLoaded,
+        updateProfile,
       }}
     >
       {children}

@@ -88,6 +88,10 @@ export default function RoomDetailScreen() {
     }
   };
 
+  const handleProfile = () => {
+    router.push('/(app)/profile');
+  };
+
   const getMemberUsername = (member: any) => {
     if (!member) return 'Unknown';
 
@@ -230,6 +234,13 @@ export default function RoomDetailScreen() {
                     </Text>
                   </View>
                 )}
+              </Pressable>
+
+              <Pressable
+                onPress={handleProfile}
+                className="bg-gray-100 flex-1 justify-center text-center px-4 py-0 rounded-lg"
+              >
+                <Text>Profile</Text>
               </Pressable>
 
               <Pressable
