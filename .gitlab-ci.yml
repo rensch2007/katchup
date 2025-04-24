@@ -11,8 +11,6 @@ notify_discord_start:
   stage: notify_start
   script:
     - 'curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL'
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 build_backend:
   stage: build
@@ -24,8 +22,6 @@ build_backend:
     - cd backend
     - docker build -t "$DOCKER_IMAGE:latest" .
     - docker push "$DOCKER_IMAGE:latest"
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 deploy_to_ec2:
   stage: deploy
@@ -46,8 +42,6 @@ deploy_to_ec2:
           -p 5001:5001 \
           kylesung0520/katchup:latest
       '
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 notify_discord:
   stage: notify_end
@@ -59,5 +53,3 @@ notify_discord:
       fi
       curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$STATUS_MSG\"}" $DISCORD_WEBHOOK_URL
   when: always
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "web"'
