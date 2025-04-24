@@ -12,6 +12,7 @@ export default function AppLayout() {
       <Stack.Screen name="create-room" />
       <Stack.Screen name="join-room" />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="room/[id]"/>
     </Stack>
   );
 }

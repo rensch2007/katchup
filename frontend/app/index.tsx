@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../src/store/authContext';
 import { useRoom } from '../src/store/roomContext';
 import { useNotification } from '../src/store/notificationContext';
+import SelectRoom from './(app)/select-room'; // assuming you have this
 
 export default function Index() {
   const { user, token, logout } = useAuth();
@@ -55,5 +56,6 @@ export default function Index() {
   };
 
   return (
+    <SelectRoom />
   );
 }
