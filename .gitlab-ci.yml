@@ -18,10 +18,10 @@ build_backend:
   services:
     - docker:dind
   script:
-    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin > /dev/null 2>&1
     - cd backend
-    - docker build -t "$DOCKER_IMAGE:latest" .
-    - docker push "$DOCKER_IMAGE:latest"
+    - docker build -t "$DOCKER_IMAGE:latest" . > /dev/null 2>&1
+    - docker push "$DOCKER_IMAGE:latest" > /dev/null 2>&1
 
 deploy_to_ec2:
   stage: deploy
@@ -30,13 +30,15 @@ deploy_to_ec2:
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/gitlab-ec2-openssh
     - chmod 600 ~/.ssh/gitlab-ec2-openssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan -H 43.202.220.249 >> ~/.ssh/known_hosts
+    - ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
     - >
-      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@43.202.220.249 '
+      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@$EC2_IP '
         docker pull kylesung0520/katchup:latest &&
         if [ "$(docker ps -a -q -f name=katchup-backend)" ]; then
           docker stop katchup-backend && docker rm katchup-backend;
         fi &&
+        docker rmi kylesung0520/katchup:latest || true &&
+        docker pull kylesung0520/katchup:latest &&
         sudo docker run -d --name katchup-backend \
           --env-file /home/ec2-user/katchup-backend/.env \
           -p 5001:5001 \
