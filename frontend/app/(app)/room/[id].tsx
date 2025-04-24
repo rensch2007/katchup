@@ -245,7 +245,7 @@ export default function RoomDetailScreen() {
 
               <Pressable
                 onPress={handleLogout}
-                className="bg-gray-100 flex-1 justify-center text-center px-4 py-0 rounded-lg"
+                className="bg-gray-100 flex-2 justify-center text-center px-4 py-0 rounded-lg"
               >
                 <Text>Logout</Text>
               </Pressable>

@@ -138,7 +138,8 @@ router.get('/me', authMiddleware, async (req, res) => {
         email: user.email,
         unreadNotifications: unreadCount,
         rooms: user.rooms,
-        defaultRoom: user.defaultRoom
+        defaultRoom: user.defaultRoom,
+        profileImage: user.profileImage
       }
     });
   } catch (error) {
@@ -178,6 +179,31 @@ router.get('/search', authMiddleware, async (req, res) => {
       success: false,
       error: error.message
     });
+  }
+});
+
+router.post('/default-room', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  const roomId = req.body.roomID;
+
+  if (!roomId) {
+    return res.status(400).json({ success: false, message: roomId});
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { defaultRoom: roomId }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ success: true, data: updatedUser.defaultRoom });
+  } catch (error) {
+    console.error('Error updating default room:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 

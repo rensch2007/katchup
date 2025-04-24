@@ -8,6 +8,7 @@ type User = {
   unreadNotifications: number;
   rooms?: string[];
   defaultRoom?: string;
+  profileImage?: string;
 };
 
 type AuthContextType = {
@@ -22,6 +23,8 @@ type AuthContextType = {
   clearError: () => void;
   userLoaded: boolean;
   updateProfile: (form: { username: string; email: string; profileImage: string; password?: string; currentPassword?: string }) => Promise<void>;
+  updateDefaultRoom: (roomId: string) => Promise<void>;
+  defaultRoom: string | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
+  const [defaultRoom, setDefaultRoom] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Load token from storage
   useEffect(() => {
@@ -54,23 +59,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     loadToken();
   }, []);
+  
+  useEffect(() => {
+    if (user) {
+      setDefaultRoom(user.defaultRoom || ''); 
+    }
+  }, [user]);
+
 
   const fetchUserData = async (currentToken = token) => {
     if (!currentToken) {
       setUserLoaded(true);
       return;
     }
-  
+
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
         headers: {
           Authorization: `Bearer ${currentToken}`,
         },
       });
-  
+
       const data = await response.json();
       console.log('Fetch user data response:', data);
-  
+
       if (data.success) {
         setUser(data.data);
       } else {
@@ -88,15 +100,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserLoaded(true);
     }
   };
-  
+
 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     setError(null);
-  
+
     try {
       console.log('Logging in with:', { username, password });
-  
+
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -104,14 +116,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({ username, password }),
       });
-  
+
       const data = await response.json();
       console.log('Login response:', data);
-  
+
       if (data.success) {
         await AsyncStorage.setItem('token', data.token);
         setToken(data.token);
-  
+
         // ✅ immediately fetch full user data
         await fetchUserData(data.token);
       } else {
@@ -125,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserLoaded(true);
     }
   };
-  
+
 
   const register = async (username: string, email: string, password: string) => {
     setIsLoading(true);
@@ -174,6 +186,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearError = () => {
     setError(null);
   };
+  const updateDefaultRoom = async (roomID: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/default-room`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ roomID }),
+      });
+
+      const data = await response.json();
+      console.log('Register response:', data);
+
+      if (data.success) {
+        console.log('upated');
+        setDefaultRoom(roomID);
+      } else {
+        setError(data.error || 'Registration failed');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateProfile = async (form: { username: string; email: string; profileImage: string; password?: string; currentPassword?: string }) => {
     setIsLoading(true);
@@ -219,11 +261,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearError,
         userLoaded,
         updateProfile,
+        updateDefaultRoom,
+        defaultRoom
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+
+
+
 };
 
 export const useAuth = () => {

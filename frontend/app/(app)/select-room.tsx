@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Text,
     View,
@@ -16,7 +16,7 @@ import { useNotification } from '../..//src/store/notificationContext';
 import RoomCard from '../../src/components/rooms/RoomCard';
 
 export default function Index() {
-    const { user, token, logout } = useAuth();
+    const { user, token, logout, defaultRoom } = useAuth();
     const { rooms, fetchRooms, isLoading: roomsLoading } = useRoom();
     const { unreadCount } = useNotification();
     const [loading, setLoading] = useState(true);
@@ -41,6 +41,16 @@ export default function Index() {
     const handleJoinRoom = () => {
         router.push('/(app)/join-room');
     };
+
+    const sortedRooms = useMemo(() => {
+        if (!rooms) return [];
+      
+        return [...rooms].sort((a, b) => {
+          if (a._id === defaultRoom) return -1;
+          if (b._id === defaultRoom) return 1;
+          return 0;
+        });
+      }, [rooms, defaultRoom]);
 
     const handleLogout = async () => {
         try {
@@ -104,7 +114,7 @@ export default function Index() {
                             <Text className="text-xl font-bold mb-4">Your Rooms</Text>
                             <View className='max-h-[70%]'>
                                 <FlatList
-                                    data={rooms}
+                                    data={sortedRooms}
                                     keyExtractor={(item) => item._id}
                                     renderItem={({ item }) => (
                                         <RoomCard
