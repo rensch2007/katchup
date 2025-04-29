@@ -13,14 +13,8 @@ export default function AppLayout() {
       <Stack.Screen name="join-room" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="room/[id]"/>
-      <Stack.Screen 
-        name="profile"
-        options={{
-          headerShown: true,
-          headerTitle: 'My Profile',
-          headerBackTitle: 'Back',
-        }}
-      />
+      <Stack.Screen name="profile"/>
+      <Stack.Screen name="create-post"/>
     </Stack>
   );
 }

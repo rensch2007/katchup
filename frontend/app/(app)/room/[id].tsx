@@ -92,6 +92,10 @@ export default function RoomDetailScreen() {
     router.push('/(app)/profile');
   };
 
+  const handleCreatePost = () => {
+    router.push('/(app)/create-post');
+  };
+
   const getMemberUsername = (member: any) => {
     if (!member) return 'Unknown';
 
@@ -238,14 +242,14 @@ export default function RoomDetailScreen() {
 
               <Pressable
                 onPress={handleProfile}
-                className="bg-gray-100 flex-1 justify-center text-center px-4 py-0 rounded-lg"
+                className="bg-gray-100 flex-2 justify-center text-center mx-1 px-4 py-0 rounded-lg"
               >
                 <Text>Profile</Text>
               </Pressable>
 
               <Pressable
                 onPress={handleLogout}
-                className="bg-gray-100 flex-2 justify-center text-center px-4 py-0 rounded-lg"
+                className="bg-gray-100 flex-2 justify-center text-center mx-1 px-4 py-0 rounded-lg"
               >
                 <Text>Logout</Text>
               </Pressable>
@@ -260,7 +264,7 @@ export default function RoomDetailScreen() {
           </View>
 
           <Pressable
-            className="bg-blue-500 p-3 rounded-lg"
+            className="bg-red-500 p-3 rounded-lg"
             onPress={handleShareRoomCode}
           >
             <Text className="text-white text-center font-medium">Share Room Code</Text>
@@ -321,24 +325,34 @@ export default function RoomDetailScreen() {
 
         {/* Invite Users Form */}
         {!showInviteForm ? (
-          <View className="flex-row justify-end space-x-2 mt-4">
-            <Pressable
-              className="bg-red-500 p-4 rounded-lg mb-4"
-              onPress={() => setShowInviteForm(true)}
-            >
-              <Text className="text-white text-center font-bold">
-                Invite Users
-              </Text>
-            </Pressable>
-            <Pressable
-              className="bg-red-500 p-4 rounded-lg mb-4"
-              onPress={handleSelectRoom}
-            >
-              <Text className="text-white text-center font-bold">
-                Select Room
-              </Text>
-            </Pressable>
-          </View>
+          <View className="flex-row justify-center mt-4">
+          <Pressable
+            className="flex items-center justify-center bg-red-500 p-4 rounded-lg mb-4 mx-1 flex-1"
+            onPress={handleCreatePost}
+          >
+            <Text className="text-white text-center font-bold">
+              Create Post
+            </Text>
+          </Pressable>
+          <Pressable
+            className="flex items-center justify-center bg-red-500 p-4 rounded-lg mb-4 mx-1 flex-1"
+            onPress={() => setShowInviteForm(true)}
+          >
+            <Text className="text-white text-center font-bold">
+              Invite Users
+            </Text>
+          </Pressable>
+          <Pressable
+            className="flex items-center justify-center bg-red-500 p-4 rounded-lg mb-4 mx-1 flex-1"
+            onPress={handleSelectRoom}
+          >
+            <Text className="text-white text-center font-bold">
+              Select Room
+            </Text>
+          </Pressable>
+        </View>
+        
+        
         ) : (
           <View className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <Text className="text-gray-800 font-medium text-lg mb-3">

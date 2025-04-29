@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './authContext';
+import { BASE_URL } from '../config';
 
 type Member = {
   user: {
@@ -50,7 +51,7 @@ type RoomContextType = {
 
 const RoomContext = createContext<RoomContextType | undefined>(undefined);
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = BASE_URL;
 
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
