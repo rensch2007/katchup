@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../store/authContext';
-
+import { BASE_URL } from '../../config';
 type User = {
   _id: string;
   username: string;
@@ -43,7 +43,7 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
 
       try {
         const response = await fetch(
-          `http://localhost:5001/api/auth/search?query=${searchQuery}`,
+          `${BASE_URL}/auth/search?query=${searchQuery}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

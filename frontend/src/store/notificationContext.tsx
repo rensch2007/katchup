@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './authContext';
+import { BASE_URL } from '../config';
 
 export type Notification = {
   _id: string;
@@ -24,7 +25,7 @@ type NotificationContextType = {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = BASE_URL;
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token, user } = useAuth();

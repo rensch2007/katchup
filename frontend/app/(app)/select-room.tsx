@@ -70,7 +70,7 @@ export default function Index() {
         <SafeAreaView className="flex-1 bg-gray-50">
             <View className="flex-1 p-4">
                 {/* App Header */}
-                <View className="flex-row items-end">
+                <Pressable className="flex-row items-end" onPress={() => router.back()}>
                     <Text className="text-3xl font-bold text-red-600">katchup</Text>
                     <Image
                         source={require('../../assets/images/katchup_bottle_slim_only.png')}
@@ -82,7 +82,7 @@ export default function Index() {
                         }}
                         resizeMode="contain"
                     />
-                </View>
+                </Pressable>
 
 
                 {/* Rooms List or Login/Create/Join Options */}
