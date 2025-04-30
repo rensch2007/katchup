@@ -10,8 +10,19 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(cors());
+//app.use(cors());
+//Testing Purpose Only
+app.use(cors({
+  origin: '*',
+  credentials: true,
+}));
 app.use(express.json());
+
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -34,6 +45,12 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date()
   });
 });
+
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

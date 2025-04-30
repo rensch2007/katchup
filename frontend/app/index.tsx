@@ -1,111 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, Pressable, ActivityIndicator, SafeAreaView } from 'react-native';
-
-interface ConnectionStatus {
-  status: string;
-  database: string;
-  error: string | null;
-}
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
+import { useAuth } from '../src/store/authContext';
+import { useRoom } from '../src/store/roomContext';
+import { useNotification } from '../src/store/notificationContext';
+import SelectRoom from './(app)/select-room'; // assuming you have this
 
 export default function Index() {
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
-    status: 'Checking...',
-    database: 'Checking...',
-    error: null
-  });
-  const [loading, setLoading] = useState(true);
-
-  const checkBackend = async () => {
-    setLoading(true);
-    setConnectionStatus({ status: 'Checking...', database: 'Checking...', error: null });
-
-    try {
-      const response = await fetch('http://localhost:5001/api/health');
-      const data = await response.json();
-      
-      setConnectionStatus({
-        status: data.status,
-        database: data.dbConnection,
-        error: null
-      });
-    } catch (error) {
-      setConnectionStatus({
-        status: 'offline',
-        database: 'disconnected',
-        error: 'Cannot connect to backend'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, token, logout } = useAuth();
+  const { rooms, fetchRooms, isLoading: roomsLoading } = useRoom();
+  const { unreadCount } = useNotification();
+  const [checkingRedirect, setCheckingRedirect] = useState(true);
 
   useEffect(() => {
-    checkBackend();
-  }, []);
+    if (token) {
+      fetchRooms();
+    }
+  }, [token]);
 
+  useEffect(() => {
+    if (user) {
+      if (user.defaultRoom) {
+        router.replace(`/(app)/room/${user.defaultRoom}`);
+      } else {
+        setCheckingRedirect(false); // no default room, show select-room
+      }
+    }
+  }, [user]);
+
+  if (checkingRedirect) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#ef4444" />
+      </SafeAreaView>
+    );
+  }
+
+  // No default room, show select-room
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-1 items-center justify-center px-6">
-        {/* Simple Tailwind Test */}
-        <View className="bg-red-300 w-full p-4 mb-4 rounded-lg">
-          <Text className="text-white text-center font-bold">
-            If this is red with white text, Tailwind is working!
-          </Text>
-        </View>
-
-        {/* App Title */}
-        <Text className="text-4xl font-bold text-red-600 mb-8">
-          Katchup
-        </Text>
-        
-        {/* Status Card */}
-        <View className="bg-white rounded-xl shadow-lg w-full p-6 mb-6">
-          <Text className="text-xl font-semibold mb-4 text-center">
-            Backend Status
-          </Text>
-          
-          {loading ? (
-            <ActivityIndicator size="large" color="#ef4444" />
-          ) : (
-            <>
-              <View className="flex-row justify-between mb-3 pb-2 border-b border-gray-200">
-                <Text className="text-gray-600">Server:</Text>
-                <Text className={`font-bold ${
-                  connectionStatus.status === 'ok' ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  {connectionStatus.status}
-                </Text>
-              </View>
-              
-              <View className="flex-row justify-between mb-3">
-                <Text className="text-gray-600">Database:</Text>
-                <Text className={`font-bold ${
-                  connectionStatus.database === 'connected' ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  {connectionStatus.database}
-                </Text>
-              </View>
-              
-              {connectionStatus.error && (
-                <Text className="text-red-500 text-center mt-2">
-                  {connectionStatus.error}
-                </Text>
-              )}
-            </>
-          )}
-        </View>
-        
-        {/* Check Button */}
-        <Pressable 
-          className={`bg-blue-300 w-full p-4 rounded-lg ${loading ? 'opacity-50' : ''}`}
-          onPress={checkBackend}
-          disabled={loading}
-        >
-          <Text className="text-white text-center font-bold text-lg">
-            {loading ? 'Checking...' : 'Check Connection'}
-          </Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
+    <SelectRoom />
   );
 }
