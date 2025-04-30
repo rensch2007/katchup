@@ -6,11 +6,12 @@ import {
   Pressable,
   ActivityIndicator,
   SafeAreaView,
+  ScrollView,
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useRoom } from '../../src/store/roomContext';
-
+import Layout from '../../src/components/Layout';
 export default function JoinRoomScreen() {
   const { joinRoom, error, clearError } = useRoom();
   const [roomCode, setRoomCode] = useState('');
@@ -47,8 +48,8 @@ if (room) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="p-4 flex-1 justify-center">
+    <Layout>
+       <ScrollView className="flex-1 p-4">
         <Text className="text-2xl font-bold text-center mb-6">Join a Room</Text>
         
         {/* Room Code Input */}
@@ -90,7 +91,7 @@ if (room) {
         >
           <Text className="text-gray-500 text-center">Cancel</Text>
         </Pressable>
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </Layout>
   );
 }
