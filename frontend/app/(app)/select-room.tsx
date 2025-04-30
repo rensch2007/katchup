@@ -7,14 +7,15 @@ import {
     SafeAreaView,
     FlatList,
     Alert,
-    Image
+    Image,
+    ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../src/store/authContext';
 import { useRoom } from '../../src/store/roomContext';
 import { useNotification } from '../..//src/store/notificationContext';
 import RoomCard from '../../src/components/rooms/RoomCard';
-
+import Layout from '../../src/components/Layout';
 export default function Index() {
     const { user, token, logout, defaultRoom } = useAuth();
     const { rooms, fetchRooms, isLoading: roomsLoading } = useRoom();
@@ -67,23 +68,8 @@ export default function Index() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <Layout>
             <View className="flex-1 p-4">
-                {/* App Header */}
-                <Pressable className="flex-row items-end" onPress={() => router.back()}>
-                    <Text className="text-3xl font-bold text-red-600">katchup</Text>
-                    <Image
-                        source={require('../../assets/images/katchup_bottle_slim_only.png')}
-                        style={{
-                            width: 30,
-                            height: 34,
-                            marginLeft: -7,
-                            marginBottom: 1,
-                        }}
-                        resizeMode="contain"
-                    />
-                </Pressable>
-
 
                 {/* Rooms List or Login/Create/Join Options */}
                 {user && token ? (
@@ -93,26 +79,8 @@ export default function Index() {
                         </View>
                     ) : rooms.length > 0 ? (
                         <>
-                            <View className="flex-row space-x-2 mt-4 mb-5">
-                                <Pressable
-                                    className="bg-red-500 p-3 rounded-lg flex-1"
-                                    onPress={handleCreateRoom}
-                                >
-                                    <Text className="text-white text-center font-medium">
-                                        Create Room
-                                    </Text>
-                                </Pressable>
-                                <Pressable
-                                    className="bg-blue-500 p-3 rounded-lg flex-1"
-                                    onPress={handleJoinRoom}
-                                >
-                                    <Text className="text-white text-center font-medium">
-                                        Join Room
-                                    </Text>
-                                </Pressable>
-                            </View>
                             <Text className="text-xl font-bold mb-4">Your Rooms</Text>
-                            <View className='max-h-[70%]'>
+                            <View className='max-h-[100%]'>
                                 <FlatList
                                     data={sortedRooms}
                                     keyExtractor={(item) => item._id}
@@ -167,6 +135,6 @@ export default function Index() {
                 )}
 
             </View>
-        </SafeAreaView>
+        </Layout>
     );
 }

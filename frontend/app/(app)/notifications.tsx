@@ -8,11 +8,12 @@ import {
   Pressable,
   RefreshControl,
   Alert,
+  ScrollView
 } from 'react-native';
 import { router } from 'expo-router';
 import { useNotification } from '../../src/store/notificationContext';
 import InvitationItem from '../../src/components/rooms/InvitationItem';
-
+import Layout from '../../src/components/Layout';
 export default function NotificationsScreen() {
   const {
     notifications,
@@ -79,8 +80,8 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="p-4 flex-1">
+    <Layout>
+     <ScrollView className="flex-1 p-4">
         <View className="flex-row justify-between items-center mb-6">
           <Text className="text-2xl font-bold">Notifications</Text>
           {notifications.length > 0 && (
@@ -118,7 +119,7 @@ export default function NotificationsScreen() {
         >
           <Text className="text-gray-500 text-center">Back</Text>
         </Pressable>
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </Layout>
   );
 }
