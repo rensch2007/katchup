@@ -15,6 +15,7 @@ export default function AppLayout() {
       <Stack.Screen name="room/[id]"/>
       <Stack.Screen name="profile"/>
       <Stack.Screen name="create-post"/>
+      <Stack.Screen name="room-settings"/>
     </Stack>
   );
 }

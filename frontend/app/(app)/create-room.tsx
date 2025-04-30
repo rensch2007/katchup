@@ -12,7 +12,7 @@ import {
 import { router } from 'expo-router';
 import UserSearchInput from '../../src/components/rooms/UserSearchInput';
 import { useRoom } from '../../src/store/roomContext';
-
+import Layout from '../../src/components/Layout';
 type User = {
   _id: string;
   username: string;
@@ -81,7 +81,7 @@ export default function CreateRoomScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <Layout>
       <ScrollView className="flex-1 p-4">
         <Text className="text-2xl font-bold text-center mb-6">Create a Room</Text>
         
@@ -134,6 +134,6 @@ export default function CreateRoomScreen() {
           <Text className="text-gray-500 text-center">Cancel</Text>
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </Layout>
   );
 }

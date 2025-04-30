@@ -39,9 +39,9 @@ export default function RootLayout() {
       <RoomProvider>
         <NotificationProvider>
           <AuthRedirect />
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
             <Stack.Screen name="index" />
-            <Stack.Screen name="(app)" />
+            <Stack.Screen name="(app)" options={{ gestureEnabled: false }} />
             <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
           </Stack>
         </NotificationProvider>

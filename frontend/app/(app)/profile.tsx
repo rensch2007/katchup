@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useAuth } from '../../src/store/authContext';
 import { router } from 'expo-router';
-
+import Layout from '../../src/components/Layout';
 const ProfilePage = () => {
   const { user, fetchUserData, userLoaded, updateProfile } = useAuth();
   const [editMode, setEditMode] = useState(false);
@@ -44,22 +44,8 @@ const ProfilePage = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <Layout>
       <ScrollView className="flex-1 p-4">
-        {/* App Header */}
-        <Pressable className="flex-row items-end" onPress={() => router.back()}>
-          <Text className="text-3xl font-bold text-red-600">katchup</Text>
-          <Image
-            source={require('../../assets/images/katchup_bottle_slim_only.png')}
-            style={{
-              width: 30,
-              height: 34,
-              marginLeft: -7,
-              marginBottom: 1,
-            }}
-            resizeMode="contain"
-          />
-        </Pressable>
         <View className="flex-1 items-center justify-center p-6">
           <Text className="text-2xl font-bold mb-4">My Profile</Text>
           {loading && <ActivityIndicator />}
@@ -123,7 +109,7 @@ const ProfilePage = () => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Layout>
   );
 };
 
