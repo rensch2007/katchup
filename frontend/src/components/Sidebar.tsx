@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/store/authContext';
 export default function Sidebar({ isOpen, onClose, slideAnim }: { isOpen: boolean; onClose: () => void; slideAnim: Animated.Value }) {
   const router = useRouter();
-const { user, token, logout } = useAuth();
+const { user, token, logout, defaultRoom } = useAuth();
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: isOpen ? -260 : 0,
@@ -43,7 +43,7 @@ const handleLogout = async () => {
         <Text style={{ fontSize: 20, fontWeight: 'bold' }}>✕</Text>
       </Pressable>
       <View style={{ marginTop: 48 }}>
-      <Pressable style={{ paddingVertical: 12 }} onPress={() => { onClose(); router.push('/(app)/room/${user.defaultRoom}'); }}>
+      <Pressable style={{ paddingVertical: 12 }} onPress={() => { onClose(); router.push(`/(app)/room/${defaultRoom}`); }}>
           <Text style={{ fontSize: 16 }}>Home</Text>
         </Pressable>
         <Pressable style={{ paddingVertical: 12 }} onPress={() => { onClose(); router.push('/(app)/profile'); }}>
