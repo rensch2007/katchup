@@ -20,30 +20,54 @@ build_backend:
   script:
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin > /dev/null 2>&1
     - cd backend
-    - docker build -t "$DOCKER_IMAGE:latest" . > /dev/null 2>&1
-    - docker push "$DOCKER_IMAGE:latest" > /dev/null 2>&1
+    - |
+      if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
+        docker build -t "$DOCKER_IMAGE:latest" . > /dev/null 2>&1
+        docker push "$DOCKER_IMAGE:latest" > /dev/null 2>&1
+      elif [ "$CI_COMMIT_REF_NAME" = "development" ]; then
+        docker build -t "$DOCKER_IMAGE:dev" . > /dev/null 2>&1
+        docker push "$DOCKER_IMAGE:dev" > /dev/null 2>&1
+      fi
+  only:
+    - main
+    - development
 
 deploy_to_ec2:
   stage: deploy
   script:
     - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/gitlab-ec2-openssh
+    - |
+      if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/gitlab-ec2-openssh
+        TARGET_IP=$EC2_IP
+        IMAGE_TAG=latest
+        CONTAINER_NAME=katchup-backend
+        ENV_PATH=.env
+        HOST_PORT=5001
+      elif [ "$CI_COMMIT_REF_NAME" = "development" ]; then
+        echo "$DEV_SSH_PRIVATE_KEY" > ~/.ssh/gitlab-ec2-openssh
+        TARGET_IP=$DEV_EC2_IP
+        IMAGE_TAG=dev
+        CONTAINER_NAME=katchup-backend-dev
+        ENV_PATH=.env.dev
+        HOST_PORT=5001  # Change this to 5002 if you want dev to run on a separate external port
+      fi
     - chmod 600 ~/.ssh/gitlab-ec2-openssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan -H $EC2_IP >> ~/.ssh/known_hosts
+    - ssh-keyscan -H $TARGET_IP >> ~/.ssh/known_hosts
     - >
-      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@$EC2_IP '
-        docker pull kylesung0520/katchup:latest &&
-        if [ "$(docker ps -a -q -f name=katchup-backend)" ]; then
-          docker stop katchup-backend && docker rm katchup-backend;
-        fi &&
-        docker rmi kylesung0520/katchup:latest || true &&
-        docker pull kylesung0520/katchup:latest &&
-        sudo docker run -d --name katchup-backend \
-          --env-file /home/ec2-user/katchup-backend/.env \
-          -p 5001:5001 \
-          kylesung0520/katchup:latest
+      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@$TARGET_IP '
+        docker pull kylesung0520/katchup:$IMAGE_TAG &&
+        docker stop $CONTAINER_NAME || true &&
+        docker rm $CONTAINER_NAME || true &&
+        docker run -d --name $CONTAINER_NAME \
+          --env-file /home/ec2-user/katchup-backend/$ENV_PATH \
+          -p $HOST_PORT:5001 \
+          kylesung0520/katchup:$IMAGE_TAG
       '
+  only:
+    - main
+    - development
 
 notify_discord:
   stage: notify_end
