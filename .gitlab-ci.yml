@@ -10,7 +10,8 @@ variables:
 notify_discord_start:
   stage: notify_start
   script:
-    - 'curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL'
+    - |
+      curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"🚀 *CI/CD 시작됨:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 배포 파이프라인이 시작되었습니다.\"}" $DISCORD_WEBHOOK_URL
 
 build_backend:
   stage: build
@@ -50,21 +51,21 @@ deploy_to_ec2:
         IMAGE_TAG=dev
         CONTAINER_NAME=katchup-backend-dev
         ENV_PATH=.env.dev
-        HOST_PORT=5001  # Change this to 5002 if you want dev to run on a separate external port
+        HOST_PORT=5001 
       fi
     - chmod 600 ~/.ssh/gitlab-ec2-openssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H $TARGET_IP >> ~/.ssh/known_hosts
     - >
-      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@$TARGET_IP '
-        docker pull kylesung0520/katchup:$IMAGE_TAG &&
+      ssh -i ~/.ssh/gitlab-ec2-openssh -o StrictHostKeyChecking=no ec2-user@$TARGET_IP "
+        docker pull $DOCKER_IMAGE:$IMAGE_TAG &&
         docker stop $CONTAINER_NAME || true &&
         docker rm $CONTAINER_NAME || true &&
         docker run -d --name $CONTAINER_NAME \
           --env-file /home/ec2-user/katchup-backend/$ENV_PATH \
           -p $HOST_PORT:5001 \
-          kylesung0520/katchup:$IMAGE_TAG
-      '
+          $DOCKER_IMAGE:$IMAGE_TAG
+      "
   only:
     - main
     - development
@@ -73,8 +74,9 @@ notify_discord:
   stage: notify_end
   script:
     - |
-      STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다."
-      if [[ "$CI_JOB_STATUS" == "failed" ]]; then
+      if [[ "$CI_JOB_STATUS" == "success" ]]; then
+        STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다."
+      else
         STATUS_MSG="❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다."
       fi
       curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$STATUS_MSG\"}" $DISCORD_WEBHOOK_URL
