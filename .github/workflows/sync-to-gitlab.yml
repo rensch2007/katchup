@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - development
 
 jobs:
   mirror:
@@ -18,4 +19,4 @@ jobs:
         run: |
           git config --global user.name "kylesung0520"
           git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/katchup/katchup.git
-          git push --force gitlab HEAD:main
+          git push --force gitlab HEAD:${GITHUB_REF##*/}
