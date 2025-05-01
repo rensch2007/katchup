@@ -17,6 +17,6 @@ jobs:
 
       - name: Push to GitLab
         run: |
-          git config --global user.name "kylesung0520"
+          git config --global user.name "${{ github.actor }}"
           git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/katchup/katchup.git
           git push --force gitlab HEAD:${GITHUB_REF##*/}
