@@ -1,10 +1,6 @@
-// src/config.ts
 import { Platform } from 'react-native';
+import { ENV, DOMAIN } from '@env';
 
-const BASE_URL = Platform.select({
-  web: 'https://www.katchup.club/api',
-  ios: 'https://www.katchup.club/api',    // <--- your LAN IP manually here
-  android: 'https://www.katchup.club/api', // same
-});
+const BASE_URL = `${DOMAIN}/api`;
 
 export { BASE_URL };
