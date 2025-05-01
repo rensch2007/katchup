@@ -4,26 +4,39 @@ import {
   Text,
   ActivityIndicator,
   SafeAreaView,
-  ScrollView,
   Pressable,
+  FlatList
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useRoom } from '../../../src/store/roomContext';
 import { useAuth } from '../../../src/store/authContext';
-import { useNotification } from '../../../src/store/notificationContext';
 import Layout from '../../../src/components/Layout';
+import PostCard from '../../../src/components/PostCard';
 
-type User = {
-  _id: string;
-  username: string;
+type Post = {
+  id: string;
 };
 
 export default function RoomDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, token } = useAuth();
-  const { rooms, currentRoom, fetchRoom, isLoading, isLoading: roomsLoading, inviteUsers, error, clearError } = useRoom();
+  const {
+    rooms,
+    currentRoom,
+    fetchRoom,
+    isLoading,
+    inviteUsers,
+    error,
+    clearError
+  } = useRoom();
+
   const [localLoading, setLocalLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
+
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isFetchingPosts, setIsFetchingPosts] = useState(false);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+
   useEffect(() => {
     const loadRoomData = async () => {
       if (!id) {
@@ -34,7 +47,7 @@ export default function RoomDetailScreen() {
 
       if (!token) {
         console.log('Token not ready yet. Waiting to fetch room...');
-        return; // 👈 WAIT until token exists
+        return;
       }
 
       try {
@@ -50,33 +63,33 @@ export default function RoomDetailScreen() {
     };
 
     loadRoomData();
-  }, [id, token]); // 👈 depend on BOTH id and token
+  }, [id, token]);
 
+  const fetchPosts = async () => {
+    if (isFetchingPosts || !hasMorePosts) return;
+    setIsFetchingPosts(true);
 
+    // Simulate API call delay
+    setTimeout(() => {
+      const newPosts = Array.from({ length: 5 }, (_, i) => ({
+        id: `${Date.now()}-${i}`
+      }));
+      
 
+      setPosts((prev) => [...prev, ...newPosts]);
+      if (newPosts.length === 0) setHasMorePosts(false);
+      setIsFetchingPosts(false);
+    }, 1000);
+  };
 
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const handleCreatePost = () => {
     router.push('/(app)/create-post');
   };
 
-  const getMemberUsername = (member: any) => {
-    if (!member) return 'Unknown';
-
-    if (typeof member === 'string') {
-      return 'User';  // We only have the ID
-    }
-
-    if (member._id) {
-      return member.username || 'Unnamed';
-    }
-
-    return 'Unknown';
-  };
-
-
-
-  // Show loading state while fetching data
   if (localLoading || isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
@@ -86,7 +99,6 @@ export default function RoomDetailScreen() {
     );
   }
 
-  // Show error state
   if (loadingError || error || !currentRoom) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center p-4">
@@ -105,19 +117,34 @@ export default function RoomDetailScreen() {
 
   return (
     <Layout>
-      <ScrollView className="flex-1 p-4">
-        <Text className="text-2xl font-bold text-center mb-2">{currentRoom.name}</Text>
-        <View className="flex-row justify-center mt-4">
-          <Pressable
-            className="flex items-center justify-center bg-red-500 p-4 rounded-lg mb-4 mx-1 flex-1"
-            onPress={handleCreatePost}
-          >
-            <Text className="text-white text-center font-bold">
-              Create Post
+      <View className="flex-1">
+        <FlatList
+          className="flex-1"
+          contentContainerStyle={{ padding: 16, paddingBottom: 80 }} // padding to avoid overlap
+          data={posts}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <PostCard />}
+          ListHeaderComponent={
+            <Text className="text-2xl font-bold text-center mb-4">
+              {currentRoom.name}
             </Text>
+          }
+          onEndReached={fetchPosts}
+          onEndReachedThreshold={0.3}
+        />
+  
+        {/* Simple Bottom Navbar */}
+        <View className="absolute bottom-0 left-0 right-0 h-16 bg-white bright:bg-neutral-900 border-t border-gray-200 dark:border-gray-700 flex-row items-center justify-center">
+          <Pressable
+            onPress={handleCreatePost}
+            className="px-6 py-2 bg-red-500 rounded-lg"
+          >
+            <Text className="text-white font-bold text-center">Create Post</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </View>
     </Layout>
   );
+  
+  
 }

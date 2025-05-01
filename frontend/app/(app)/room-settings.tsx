@@ -26,7 +26,7 @@ type User = {
 
 export default function RoomDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, defaultRoom } = useAuth();
   const { rooms, currentRoom, fetchRoom, isLoading, isLoading: roomsLoading, inviteUsers, error, clearError } = useRoom();
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [isInviting, setIsInviting] = useState(false);
@@ -34,22 +34,23 @@ export default function RoomDetailScreen() {
   const [localLoading, setLocalLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const { unreadCount } = useNotification();
+  
   useEffect(() => {
     const loadRoomData = async () => {
-      if (!user?.defaultRoom) {
+      if (!defaultRoom) {
         setLoadingError('Room ID is missing');
         setLocalLoading(false);
         return;
       }
-
+  
       if (!token) {
         console.log('Token not ready yet. Waiting to fetch room...');
-        return; // 👈 WAIT until token exists
+        return;
       }
-
+  
       try {
-        console.log('Fetching room with ID:', user?.defaultRoom);
-        await fetchRoom(user?.defaultRoom);
+        console.log('Fetching room with ID:', defaultRoom);
+        await fetchRoom(defaultRoom);
         console.log('Room fetch completed');
       } catch (err) {
         console.error('Error fetching room:', err);
@@ -58,10 +59,10 @@ export default function RoomDetailScreen() {
         setLocalLoading(false);
       }
     };
-
+  
     loadRoomData();
-  }, [user?.defaultRoom, token]); // 👈 depend on BOTH id and token
-
+  }, [defaultRoom, token]);
+  
 
   const goToNotifications = () => {
     router.push('/(app)/notifications');
