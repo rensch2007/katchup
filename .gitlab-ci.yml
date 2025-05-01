@@ -74,7 +74,7 @@ notify_discord:
   stage: notify_end
   script:
     - |
-      if [[ "$CI_JOB_STATUS" == "success" ]]; then
+      if [[ "$CI_PIPELINE_STATUS" == "success" ]]; then
         STATUS_MSG="✅ *CI/CD 성공:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포가 완료되었습니다."
       else
         STATUS_MSG="❌ *CI/CD 실패:* \`$CI_PROJECT_NAME\` 의 \`$CI_COMMIT_REF_NAME\` 브랜치 배포에 실패했습니다."
