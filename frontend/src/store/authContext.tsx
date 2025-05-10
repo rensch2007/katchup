@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config';
 
 type User = {
-  id: string;
+  _id: string;
   username: string;
   email: string;
   unreadNotifications: number;
