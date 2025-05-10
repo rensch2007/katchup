@@ -12,48 +12,47 @@ import { useRoom } from '../../../src/store/roomContext';
 import { useAuth } from '../../../src/store/authContext';
 import Layout from '../../../src/components/Layout';
 import PostCard from '../../../src/components/PostCard';
+import { BASE_URL } from '../../../src/config';
 
 type Post = {
-  id: string;
+  _id: string;
+  text: string;
+  images?: string[];
+  location?: string;
+  createdAt: string;
+  createdBy: {
+    _id: string;
+    username: string;
+  } | string;
+  roomId: string;
 };
 
 export default function RoomDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const {
-    rooms,
     currentRoom,
     fetchRoom,
     isLoading,
-    inviteUsers,
     error,
-    clearError
   } = useRoom();
 
   const [localLoading, setLocalLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
-
   const [posts, setPosts] = useState<Post[]>([]);
   const [isFetchingPosts, setIsFetchingPosts] = useState(false);
-  const [hasMorePosts, setHasMorePosts] = useState(true);
 
+  // Fetch room details
   useEffect(() => {
     const loadRoomData = async () => {
-      if (!id) {
-        setLoadingError('Room ID is missing');
+      if (!id || !token) {
+        setLoadingError('Room ID or token missing');
         setLocalLoading(false);
         return;
       }
 
-      if (!token) {
-        console.log('Token not ready yet. Waiting to fetch room...');
-        return;
-      }
-
       try {
-        console.log('Fetching room with ID:', id);
         await fetchRoom(id);
-        console.log('Room fetch completed');
       } catch (err) {
         console.error('Error fetching room:', err);
         setLoadingError('Failed to load room details');
@@ -65,26 +64,34 @@ export default function RoomDetailScreen() {
     loadRoomData();
   }, [id, token]);
 
+  // Fetch posts by roomId
   const fetchPosts = async () => {
-    if (isFetchingPosts || !hasMorePosts) return;
-    setIsFetchingPosts(true);
+    if (!token || !id || isFetchingPosts) return;
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const newPosts = Array.from({ length: 5 }, (_, i) => ({
-        id: `${Date.now()}-${i}`
-      }));
-      
+    try {
+      setIsFetchingPosts(true);
+      const res = await fetch(`${BASE_URL}/posts/room/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      setPosts((prev) => [...prev, ...newPosts]);
-      if (newPosts.length === 0) setHasMorePosts(false);
+      const json = await res.json();
+      if (json.success) {
+        setPosts(json.data);
+      } else {
+        console.warn('Failed to fetch posts:', json.message);
+      }
+    } catch (err) {
+      console.error('Fetch posts error:', err);
+    } finally {
       setIsFetchingPosts(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [id]);
 
   const handleCreatePost = () => {
     router.push('/(app)/create-post');
@@ -120,21 +127,21 @@ export default function RoomDetailScreen() {
       <View className="flex-1">
         <FlatList
           className="flex-1"
-          contentContainerStyle={{ padding: 16, paddingBottom: 80 }} // padding to avoid overlap
+          contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
           data={posts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PostCard />}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => <PostCard post={item} />}
           ListHeaderComponent={
             <Text className="text-2xl font-bold text-center mb-4">
               {currentRoom.name}
             </Text>
           }
-          onEndReached={fetchPosts}
-          onEndReachedThreshold={0.3}
+          refreshing={isFetchingPosts}
+          onRefresh={fetchPosts}
         />
-  
-        {/* Simple Bottom Navbar */}
-        <View className="absolute bottom-0 left-0 right-0 h-16 bg-white bright:bg-neutral-900 border-t border-gray-200 dark:border-gray-700 flex-row items-center justify-center">
+
+        {/* Bottom Create Post Bar */}
+        <View className="absolute bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex-row items-center justify-center">
           <Pressable
             onPress={handleCreatePost}
             className="px-6 py-2 bg-red-500 rounded-lg"
@@ -145,6 +152,4 @@ export default function RoomDetailScreen() {
       </View>
     </Layout>
   );
-  
-  
 }
