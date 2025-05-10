@@ -45,7 +45,7 @@ router.post('/register', async (req, res) => {
       success: true,
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         username: user.username,
         email: user.email
       }
@@ -100,7 +100,7 @@ router.post('/login', async (req, res) => {
       success: true,
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         username: user.username,
         email: user.email,
         unreadNotifications: unreadCount
@@ -133,7 +133,7 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        id: user._id,
+        _id: user._id,
         username: user.username,
         email: user.email,
         unreadNotifications: unreadCount,

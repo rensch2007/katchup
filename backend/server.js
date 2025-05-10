@@ -22,6 +22,7 @@ const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const userRoutes = require('./routes/userRoutes');
+const postRoutes = require('./routes/postRoutes');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
