@@ -20,6 +20,8 @@ export default function PostCard({ post }: PostCardProps) {
   const { token } = useAuth();
   const [signedImageUrls, setSignedImageUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [imageRenderLoading, setImageRenderLoading] = useState(true);
 
   const username =
     typeof post.createdBy === 'string' ? 'Unknown' : post.createdBy.username;
@@ -31,7 +33,11 @@ export default function PostCard({ post }: PostCardProps) {
 
   useEffect(() => {
     const fetchSignedUrls = async () => {
-      if (!post.images || post.images.length === 0 || !token) return;
+      if (!post.images || post.images.length === 0 || !token) {
+        setSignedImageUrls([]); // ensure it's empty
+        setLoading(false);
+        return;
+      }
 
       try {
         const urls: string[] = [];
@@ -62,60 +68,115 @@ export default function PostCard({ post }: PostCardProps) {
   }, [post.images, token]);
 
   return (
-    <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6 }}>
+    <View
+      style={{
+        backgroundColor: 'white',
+        borderRadius: 12,
+        paddingVertical: 12,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      }}
+    >
       {/* Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: 12,
+          marginBottom: 8,
+        }}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ccc', marginRight: 12 }} />
-          <Text style={{ fontWeight: '600', fontSize: 16 }}>{username}</Text>
+          {/* Avatar */}
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: '#ccc',
+              marginRight: 10,
+            }}
+          />
+          {/* Username + Location */}
+          <View>
+            <Text style={{ fontWeight: '600', fontSize: 15 }}>{username}</Text>
+            {shortLocation ? (
+              <Text style={{ fontSize: 12, color: '#888' }}>{shortLocation}</Text>
+            ) : null}
+          </View>
         </View>
-        <Text style={{ fontSize: 12, color: '#888' }}>{formattedDate}</Text>
+  
+        {/* Date */}
+        <Text style={{ fontSize: 11, color: '#999' }}>{formattedDate}</Text>
       </View>
-
-      {/* Image Carousel */}
-      {loading ? (
-        <ActivityIndicator size="large" style={{ marginVertical: 12 }} />
-      ) : signedImageUrls.length > 0 ? (
-        <FlatList
-          data={signedImageUrls}
-          keyExtractor={(item, index) => `${item}-${index}`}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={{ width: 340, alignItems: 'center' }}>
-              <Image
-                source={{ uri: item, cache: 'reload' }}
-                style={{
-                  width: 340,
-                  height: 200,
-                  borderRadius: 12,
+  
+      {/* Image Section */}
+      {post.images && post.images.length > 0 && (
+        <View style={{ height: 375, justifyContent: 'center', alignItems: 'center' }}>
+          {loading ? (
+            <ActivityIndicator size="large" />
+          ) : signedImageUrls.length > 0 ? (
+            <>
+              <FlatList
+                data={signedImageUrls}
+                keyExtractor={(item, index) => `${item}-${index}`}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const index = Math.floor(
+                    event.nativeEvent.contentOffset.x /
+                    event.nativeEvent.layoutMeasurement.width
+                  );
+                  setActiveIndex(index);
                 }}
-                resizeMode="cover"
+                renderItem={({ item }) => (
+                  <Image
+  source={{ uri: item }}
+  style={{ width: 375, height: 375, resizeMode: 'cover' }}
+  onLoadEnd={() => setImageRenderLoading(false)}
+/>
+
+                )}
               />
-            </View>
-          )}
-          contentContainerStyle={{ alignItems: 'center', marginBottom: 12 }}
-        />
-      ) : (
-        <View style={{ height: 200, backgroundColor: '#eee', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
-          <Text style={{ color: '#aaa' }}>No image available</Text>
+  
+              {/* Pagination Dots */}
+              {signedImageUrls.length > 1 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, position: 'absolute', bottom: 10 }}>
+                  {signedImageUrls.map((_, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        marginHorizontal: 4,
+                        backgroundColor: index === activeIndex ? '#333' : '#ccc',
+                      }}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          ) : null}
         </View>
       )}
-
-      {/* Text */}
-      <Text style={{ fontSize: 14, color: '#333', marginBottom: 4 }}>{post.text}</Text>
-
-      {/* Location */}
-      {shortLocation && (
-        <Text style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>📍 {shortLocation}</Text>
+  
+      {/* Caption */}
+      {post.text?.trim() !== '' && (
+        <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
+          <Text style={{ fontSize: 14, color: '#333' }}>
+            <Text style={{ fontWeight: '600' }}>{username} </Text>
+            {post.text}
+          </Text>
+        </View>
       )}
-
-      {/* Footer */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-        <Text style={{ fontSize: 12, color: '#888' }}>💬 0 Comments</Text>
-        <Text style={{ fontSize: 12, color: '#888' }}>❤️ 0 Likes</Text>
-      </View>
     </View>
   );
+  
+
+
 }
