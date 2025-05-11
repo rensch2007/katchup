@@ -32,6 +32,8 @@ export default function CreatePost() {
     const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleApiKey;
     const mapRef = useRef<MapView | null>(null);
     const scrollViewRef = useRef<ScrollView | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     useEffect(() => {
         fetchCurrentLocation();
     }, []);
@@ -211,48 +213,41 @@ export default function CreatePost() {
     };
 
     const handleSubmit = async () => {
-    console.log('[handleSubmit] pressed');
-    if (!text.trim() && images.length === 0) {
-        alert('Post cannot be empty.');
-        console.log('[handleSubmit] blocked: empty post');
-        return;
-    }
-
-    console.log('[handleSubmit] calling createPost with:', {
-        text,
-        image: images,
-        location: location
-            ? `${location.address} (${location.latitude}, ${location.longitude})`
-            : undefined,
-    });
-
-    try {
-        const success = await createPost({
-            text,
-            image: images,
-            location: location
-                ? `${location.address} (${location.latitude}, ${location.longitude})`
-                : undefined,
-        });
-
-        console.log('[handleSubmit] createPost success?', success);
-
-        if (success) {
-            setText('');
-            setImages([]);
-            setLocation(null);
-            setRegion(null);
-            setSearchQuery('');
-            setSearchResults([]);
-            router.push('/');
-        } else {
-            alert('Failed to create post. Please try again.');
-        }
-    } catch (err) {
-        console.error('[handleSubmit] createPost threw:', err);
-        alert('An unexpected error occurred.');
-    }
-};
+      if (!text.trim() && images.length === 0) {
+          alert('Post cannot be empty.');
+          return;
+      }
+  
+      setIsSubmitting(true); // ⬅️ Start spinner
+  
+      try {
+          const success = await createPost({
+              text,
+              image: images,
+              location: location
+                  ? `${location.address} (${location.latitude}, ${location.longitude})`
+                  : undefined,
+          });
+  
+          if (success) {
+              setText('');
+              setImages([]);
+              setLocation(null);
+              setRegion(null);
+              setSearchQuery('');
+              setSearchResults([]);
+              router.push('/');
+          } else {
+              alert('Failed to create post. Please try again.');
+          }
+      } catch (err) {
+          console.error('[handleSubmit] Error:', err);
+          alert('An unexpected error occurred.');
+      } finally {
+          setIsSubmitting(false); // ⬅️ Stop spinner
+      }
+  };
+  
 
   
 
@@ -436,11 +431,17 @@ setIsPickingLocation(true);
 
                   {/* Submit Button */}
                   <Pressable
-                      onPress={handleSubmit}
-                      className="bg-red-500 p-4 rounded-lg"
-                  >
-                      <Text className="text-white text-center font-medium">Post</Text>
-                  </Pressable>
+    onPress={handleSubmit}
+    className={`p-4 rounded-lg ${isSubmitting ? 'bg-gray-400' : 'bg-red-500'}`}
+    disabled={isSubmitting}
+>
+    {isSubmitting ? (
+        <ActivityIndicator color="white" />
+    ) : (
+        <Text className="text-white text-center font-medium">Post</Text>
+    )}
+</Pressable>
+
               </ScrollView></TouchableWithoutFeedback>
       </KeyboardAvoidingView>
  </Layout>
