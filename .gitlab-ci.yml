@@ -50,7 +50,7 @@ deploy_to_ec2:
         TARGET_IP=$DEV_EC2_IP
         IMAGE_TAG=dev
         CONTAINER_NAME=katchup-backend-dev
-        ENV_PATH=.env.dev
+        ENV_PATH=.env
         HOST_PORT=5001 
       fi
     - chmod 600 ~/.ssh/gitlab-ec2-openssh
