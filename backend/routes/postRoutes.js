@@ -16,7 +16,6 @@ router.post('/s3-url', async (req, res) => {
     try {
         console.log('[POST /s3-url] body:', req.body);
         console.log('[s3-url] AWS_S3_BUCKET_NAME =', process.env.AWS_S3_BUCKET_NAME);
-        console.log('[s3-url] Params =', params);
         
         const { fileName, fileType } = req.body;
         const params = {
