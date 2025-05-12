@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, Image, FlatList, ActivityIndicator, Dimensions } from 'react-native';
 import { BASE_URL } from '../config';
 import { useAuth } from '../store/authContext';
 
@@ -22,7 +22,7 @@ export default function PostCard({ post }: PostCardProps) {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [imageRenderLoading, setImageRenderLoading] = useState(true);
-
+  const { width: screenWidth } = Dimensions.get('window');
   const username =
     typeof post.createdBy === 'string' ? 'Unknown' : post.createdBy.username;
 
@@ -115,33 +115,43 @@ export default function PostCard({ post }: PostCardProps) {
   
       {/* Image Section */}
       {post.images && post.images.length > 0 && (
-        <View style={{ height: 375, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ height: screenWidth, justifyContent: 'center', alignItems: 'center' }}>
           {loading ? (
             <ActivityIndicator size="large" />
           ) : signedImageUrls.length > 0 ? (
             <>
               <FlatList
-                data={signedImageUrls}
-                keyExtractor={(item, index) => `${item}-${index}`}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(event) => {
-                  const index = Math.floor(
-                    event.nativeEvent.contentOffset.x /
-                    event.nativeEvent.layoutMeasurement.width
-                  );
-                  setActiveIndex(index);
-                }}
-                renderItem={({ item }) => (
-                  <Image
-  source={{ uri: item }}
-  style={{ width: 375, height: 375, resizeMode: 'cover' }}
-  onLoadEnd={() => setImageRenderLoading(false)}
+  data={signedImageUrls}
+  keyExtractor={(item, index) => `${item}-${index}`}
+  horizontal
+  pagingEnabled
+  showsHorizontalScrollIndicator={false}
+  getItemLayout={(_, index) => ({
+    length: screenWidth,
+    offset: screenWidth * index,
+    index,
+  })}
+  snapToInterval={screenWidth}
+  decelerationRate="fast"
+  onMomentumScrollEnd={(event) => {
+    const index = Math.floor(
+      event.nativeEvent.contentOffset.x / screenWidth
+    );
+    setActiveIndex(index);
+  }}
+  renderItem={({ item }) => (
+    <Image
+      source={{ uri: item }}
+      style={{
+        width: screenWidth,
+        height: screenWidth,
+        resizeMode: 'cover',
+      }}
+      onLoadEnd={() => setImageRenderLoading(false)}
+    />
+  )}
 />
 
-                )}
-              />
   
               {/* Pagination Dots */}
               {signedImageUrls.length > 1 && (
