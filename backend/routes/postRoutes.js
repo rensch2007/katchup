@@ -15,7 +15,9 @@ const s3 = new aws.S3({
 router.post('/s3-url', async (req, res) => {
     try {
         console.log('[POST /s3-url] body:', req.body);
-
+        console.log('[s3-url] AWS_S3_BUCKET_NAME =', process.env.AWS_S3_BUCKET_NAME);
+        console.log('[s3-url] Params =', params);
+        
         const { fileName, fileType } = req.body;
         const params = {
             Bucket: process.env.AWS_S3_BUCKET_NAME,
@@ -98,12 +100,14 @@ router.get('/signed-url', authMiddleware, async (req, res) => {
     }
   
     try {
+      /*
       const url = await s3.getSignedUrlPromise('getObject', {
         Bucket: process.env.AWS_S3_BUCKET_NAME,
         Key: key,
         Expires: 60,
       });
-  
+      */
+      const url = `https://d1uq97yea9byz5.cloudfront.net/${encodeURIComponent(key)}`;
       return res.json({ success: true, url });
     } catch (err) {
       console.error('[signed-url GET ERROR]', err);
