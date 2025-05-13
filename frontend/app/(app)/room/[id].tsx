@@ -41,6 +41,17 @@ export default function RoomDetailScreen() {
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isFetchingPosts, setIsFetchingPosts] = useState(false);
+  const getStreakEmoji = (count: number) => {
+    if (count >= 7) return '🍅🔥💥';
+    if (count >= 5) return '🍅🍅';
+    if (count >= 3) return '🍅';
+    if (count >= 2) return '🌿';
+    return '🌱';
+  };
+  const [postedUserIds, setPostedUserIds] = useState<string[]>([]);
+  const [allMemberIds, setAllMemberIds] = useState<string[]>([]);
+  const [youPostedToday, setYouPostedToday] = useState(false);
+
 
   // Fetch room details
   useEffect(() => {
@@ -89,13 +100,37 @@ export default function RoomDetailScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, [id]);
 
   const handleCreatePost = () => {
     router.push('/(app)/create-post');
   };
+
+  const fetchStreakStatus = async () => {
+    if (!token || !id) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/rooms/${id}/streak-status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setPostedUserIds(json.postedUserIds);
+        setAllMemberIds(json.allMemberIds);
+        setYouPostedToday(json.youPostedToday);
+      }
+    } catch (err) {
+      console.error('Error fetching streak status:', err);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchPosts();
+    fetchStreakStatus();
+  }, [id]);
 
   if (localLoading || isLoading) {
     return (
@@ -131,13 +166,31 @@ export default function RoomDetailScreen() {
           data={posts}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <PostCard post={item} />}
-          ListHeaderComponent={
-            <Text className="text-2xl font-bold text-center mb-4">
-              {currentRoom.name}
-            </Text>
-          }
           refreshing={isFetchingPosts}
           onRefresh={fetchPosts}
+          ListHeaderComponent={
+            <>
+              <View className="space-y-1 mb-4">
+                <Text className="text-center text-sm">
+                  {youPostedToday
+                    ? '✅ You’ve posted today!'
+                    : '❗You haven’t posted yet today'}
+                </Text>
+                <Text className="text-center text-xs text-gray-500">
+                  {postedUserIds.length} / {allMemberIds.length} members have posted
+                </Text>
+                <Text className="text-center text-sm text-gray-600">
+                  {getStreakEmoji(currentRoom.collectiveStreakCount ?? 0)}{' '}
+                  {currentRoom.collectiveStreakCount ?? 0}-day streak
+                </Text>
+              </View>
+
+              {/* Optional: Show room name after streak info */}
+              <Text className="text-2xl font-bold text-center mb-4">
+                {currentRoom.name}
+              </Text>
+            </>
+          }
         />
 
         {/* Bottom Create Post Bar */}

@@ -29,7 +29,16 @@ export type Room = {
   code: string;
   createdAt: string;
   updatedAt: string;
+  collectiveStreakCount?: number;
+  lastStreakDate?: string;
+  streakHistory?: {
+    date: string;
+    success: boolean;
+    userIds: string[];
+  }[];
+  cutoffHourKST?: number;
 };
+
 
 type RoomContextType = {
   rooms: Room[];
@@ -72,10 +81,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchRooms = async () => {
     if (!token) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Fetching all rooms...');
       const response = await fetch(`${API_URL}/rooms`, {
@@ -83,10 +92,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
       console.log('Rooms fetch response:', data);
-      
+
       if (data.success) {
         setRooms(data.data);
       } else {
@@ -102,10 +111,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchRoom = async (roomId: string) => {
     if (!token) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log(`Fetching room ${roomId}...`);
       const response = await fetch(`${API_URL}/rooms/${roomId}`, {
@@ -113,10 +122,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
       console.log('Room fetch response:', data);
-      
+
       if (data.success) {
         setCurrentRoom(data.data);
       } else {
@@ -132,10 +141,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createRoom = async (name: string): Promise<Room | null> => {
     if (!token) return null;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Creating room with name:', name || '[auto-generated]');
       const response = await fetch(`${API_URL}/rooms`, {
@@ -146,10 +155,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({ name }),
       });
-      
+
       const data = await response.json();
       console.log('Create room response:', data);
-      
+
       if (data.success) {
         await fetchRooms(); // Refresh room list
         return data.data;
@@ -167,17 +176,17 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const inviteUsers = async (
-    roomId: string, 
+    roomId: string,
     usernames: string[]
   ): Promise<{
     invited: string[];
     invalid: { username: string; reason: string }[];
   } | null> => {
     if (!token) return null;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Inviting users to room:', roomId, usernames);
       const response = await fetch(`${API_URL}/rooms/${roomId}/invite`, {
@@ -188,10 +197,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({ usernames }),
       });
-      
+
       const data = await response.json();
       console.log('Invite users response:', data);
-      
+
       if (data.success) {
         if (currentRoom && currentRoom._id === roomId) {
           await fetchRoom(roomId); // Refresh current room data
@@ -212,10 +221,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const joinRoom = async (code: string): Promise<Room | null> => {
     if (!token) return null;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Joining room with code:', code);
       const response = await fetch(`${API_URL}/rooms/join`, {
@@ -226,10 +235,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({ code }),
       });
-      
+
       const data = await response.json();
       console.log('Join room response:', data);
-      
+
       if (data.success) {
         await fetchRooms(); // Refresh room list
         return data;
@@ -248,10 +257,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const acceptInvitation = async (roomId: string): Promise<Room | null> => {
     if (!token) return null;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Accepting invitation for room:', roomId);
       const response = await fetch(`${API_URL}/rooms/invitations/${roomId}/accept`, {
@@ -260,10 +269,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
       console.log('Accept invitation response:', data);
-      
+
       if (data.success) {
         await fetchRooms(); // Refresh room list
         return data.data;
@@ -282,10 +291,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const declineInvitation = async (roomId: string): Promise<boolean> => {
     if (!token) return false;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Declining invitation for room:', roomId);
       const response = await fetch(`${API_URL}/rooms/invitations/${roomId}/decline`, {
@@ -294,10 +303,10 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
       console.log('Decline invitation response:', data);
-      
+
       if (data.success) {
         return true;
       } else {
