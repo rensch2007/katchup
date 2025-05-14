@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   Pressable,
-  FlatList
+  FlatList,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useRoom } from '../../../src/store/roomContext';
@@ -39,8 +39,13 @@ export default function RoomDetailScreen() {
 
   const [localLoading, setLocalLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [isFetchingPosts, setIsFetchingPosts] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 10;
+
   const getStreakEmoji = (count: number) => {
     if (count >= 7) return '🍅🔥💥';
     if (count >= 5) return '🍅🍅';
@@ -48,12 +53,11 @@ export default function RoomDetailScreen() {
     if (count >= 2) return '🌿';
     return '🌱';
   };
+
   const [postedUserIds, setPostedUserIds] = useState<string[]>([]);
   const [allMemberIds, setAllMemberIds] = useState<string[]>([]);
   const [youPostedToday, setYouPostedToday] = useState(false);
 
-
-  // Fetch room details
   useEffect(() => {
     const loadRoomData = async () => {
       if (!id || !token) {
@@ -75,21 +79,32 @@ export default function RoomDetailScreen() {
     loadRoomData();
   }, [id, token]);
 
-  // Fetch posts by roomId
-  const fetchPosts = async () => {
+  const fetchPosts = async (reset = false) => {
     if (!token || !id || isFetchingPosts) return;
 
     try {
       setIsFetchingPosts(true);
-      const res = await fetch(`${BASE_URL}/posts/room/${id}`, {
+      const currentPage = reset ? 1 : page;
+
+      const res = await fetch(`${BASE_URL}/posts/room/${id}?page=${currentPage}&limit=${PAGE_SIZE}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       const json = await res.json();
+
       if (json.success) {
-        setPosts(json.data);
+        const newPosts = json.data;
+
+        setPosts(prev => {
+          const combined = reset ? newPosts : [...prev, ...newPosts];
+          const unique = Array.from(new Map(combined.map(p => [p._id, p])).values());
+          return unique;
+        });
+
+        setHasMore(newPosts.length === PAGE_SIZE);
+        setPage(reset ? 2 : currentPage + 1);
       } else {
         console.warn('Failed to fetch posts:', json.message);
       }
@@ -99,7 +114,6 @@ export default function RoomDetailScreen() {
       setIsFetchingPosts(false);
     }
   };
-
 
   const handleCreatePost = () => {
     router.push('/(app)/create-post');
@@ -126,9 +140,8 @@ export default function RoomDetailScreen() {
     }
   };
 
-
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(true);
     fetchStreakStatus();
   }, [id]);
 
@@ -167,7 +180,16 @@ export default function RoomDetailScreen() {
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <PostCard post={item} />}
           refreshing={isFetchingPosts}
-          onRefresh={fetchPosts}
+          onRefresh={() => {
+            setPage(1);
+            fetchPosts(true);
+          }}
+          onEndReached={() => {
+            if (hasMore && !isFetchingPosts) {
+              fetchPosts();
+            }
+          }}
+          onEndReachedThreshold={0.5}
           ListHeaderComponent={
             <>
               <View className="space-y-1 mb-4">
@@ -184,12 +206,17 @@ export default function RoomDetailScreen() {
                   {currentRoom.collectiveStreakCount ?? 0}-day streak
                 </Text>
               </View>
-
-              {/* Optional: Show room name after streak info */}
               <Text className="text-2xl font-bold text-center mb-4">
                 {currentRoom.name}
               </Text>
             </>
+          }
+          ListFooterComponent={
+            isFetchingPosts && posts.length > 0 ? (
+              <View className="py-4 items-center">
+                <ActivityIndicator size="small" color="#ef4444" />
+              </View>
+            ) : null
           }
         />
 
