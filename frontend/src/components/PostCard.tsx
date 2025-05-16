@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TouchableOpacity, Linking } from 'react-native';
 import { BASE_URL } from '../config';
 import { useAuth } from '../store/authContext';
+import { Audio } from 'expo-av';
+import { useRouter } from 'expo-router';
+import { WebView } from 'react-native-webview';
 
 type PostCardProps = {
-  post: {
-    text: string;
-    images?: string[];
-    location?: string;
-    createdAt: string;
-    createdBy: {
-      _id: string;
-      username: string;
-    } | string;
-  };
+post: {
+  text: string;
+  images?: string[];
+  location?: string;
+  createdAt: string;
+  createdBy: {
+    _id: string;
+    username: string;
+  } | string;
+  musicPlatform?: 'spotify' | 'youtube';
+  musicTrackId?: string;
+  musicTitle?: string;
+  musicArtist?: string;
+  musicAlbumCover?: string;
+  musicPreviewUrl?: string;
+};
+
 };
 
 export default function PostCard({ post }: PostCardProps) {
@@ -23,11 +33,26 @@ export default function PostCard({ post }: PostCardProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [imageRenderLoading, setImageRenderLoading] = useState(true);
   const { width: screenWidth } = Dimensions.get('window');
+  const router = useRouter();
   const username =
     typeof post.createdBy === 'string' ? 'Unknown' : post.createdBy.username;
 
   const formattedDate = new Date(post.createdAt).toLocaleDateString();
+const musicButtonStyle = {
+  marginTop: 8,
+  paddingHorizontal: 14,
+  paddingVertical: 8,
+  borderRadius: 10,
+  flexDirection: 'row',
+  alignItems: 'center',
+  alignSelf: 'flex-start',
+};
 
+const musicTextStyle = {
+  color: 'white',
+  fontSize: 13,
+  fontWeight: '600',
+};
   // Try to shorten location (e.g., remove address details)
   const shortLocation = post.location?.split(',')[0] ?? '';
 
@@ -174,7 +199,70 @@ export default function PostCard({ post }: PostCardProps) {
           ) : null}
         </View>
       )}
-  
+  {/* Music Section */}
+{post.musicPlatform && post.musicTitle && (
+  <View style={{ paddingHorizontal: 12, marginTop: 12 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        backgroundColor: '#f9f9f9',
+        borderRadius: 12,
+        padding: 12,
+        alignItems: 'center',
+      }}
+    >
+      {/* Album Cover */}
+      <Image
+        source={{ uri: post.musicAlbumCover }}
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 8,
+          marginRight: 12,
+          backgroundColor: '#ddd',
+        }}
+      />
+
+      {/* Info + Button */}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontWeight: '600', fontSize: 14, color: '#111' }} numberOfLines={1}>
+          {post.musicTitle}
+        </Text>
+        <Text style={{ color: '#666', fontSize: 12 }} numberOfLines={1}>
+          {post.musicArtist}
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => {
+            const url =
+              post.musicPlatform === 'spotify'
+                ? `https://open.spotify.com/track/${post.musicTrackId}`
+                : `https://music.youtube.com/watch?v=${post.musicTrackId}`;
+            Linking.openURL(url);
+          }}
+          style={{
+            marginTop: 8,
+            paddingVertical: 8,
+            paddingHorizontal: 14,
+            backgroundColor:
+              post.musicPlatform === 'spotify' ? '#25C75A' : '#E44848',
+            borderRadius: 8,
+            alignSelf: 'flex-start',
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
+            Play on {post.musicPlatform === 'spotify' ? 'Spotify' : 'YouTube Music'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+)}
+
+
+
+
+
       {/* Caption */}
       {post.text?.trim() !== '' && (
         <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
