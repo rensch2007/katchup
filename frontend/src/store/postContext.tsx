@@ -10,11 +10,16 @@ interface Post {
   location?: string;
 }
 
-interface PostContextType {
-  createPost: (post: Post) => Promise<boolean>;
-  isLoading: boolean;
-  error: string | null;
-  clearError: () => void;
+interface Post {
+  text: string;
+  image?: string[] | null;
+  location?: string;
+  musicPlatform?: 'spotify' | 'youtube';
+  musicTrackId?: string;
+  musicTitle?: string;
+  musicArtist?: string;
+  musicAlbumCover?: string;
+  musicPreviewUrl?: string;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -34,15 +39,15 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setIsLoading(true);
     setError(null);
-  
+
     try {
       let imageUrls: string[] = [];
-  
+
       if (post.image && post.image.length > 0) {
         for (const image of post.image) {
           const fileName = image.split('/').pop();
           const fileType = fileName?.split('.').pop();
-  
+
           const signedRes = await fetch(`${BASE_URL}/posts/s3-url`, {
             method: 'POST',
             headers: {
@@ -51,9 +56,9 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
             },
             body: JSON.stringify({ fileName, fileType }),
           });
-  
+
           const signedData = await signedRes.json();
-  
+
           await FileSystem.uploadAsync(signedData.url, image, {
             httpMethod: 'PUT',
             uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
@@ -61,20 +66,29 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
               'Content-Type': `image/${fileType}`,
             },
           });
-  
+
           const publicUrl = signedData.url.split('?')[0];
           imageUrls.push(publicUrl);
         }
       }
-  
+
       const postPayload = {
         text: post.text,
         images: imageUrls,
         location: post.location,
         roomId: currentRoom._id,
         createdBy: user._id,
+        ...(post.musicPlatform && {
+          musicPlatform: post.musicPlatform,
+          musicTrackId: post.musicTrackId,
+          musicTitle: post.musicTitle,
+          musicArtist: post.musicArtist,
+          musicAlbumCover: post.musicAlbumCover,
+          musicPreviewUrl: post.musicPreviewUrl,
+        }),
       };
-  
+
+
       const res = await fetch(`${BASE_URL}/posts`, {
         method: 'POST',
         headers: {
@@ -83,7 +97,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify(postPayload),
       });
-  
+
       const json = await res.json();
       return json.success;
     } catch (err) {
@@ -94,7 +108,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
-  
+
 
   const clearError = () => setError(null);
 
