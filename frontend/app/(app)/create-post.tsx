@@ -15,6 +15,8 @@ import { usePostContext } from '../../src/store/postContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import Layout from '../../src/components/Layout';
+import { fetchMusicMetadata, MusicMetadata } from '../../src/store/musicContext';
+import { useAuth } from '../../src/store/authContext';
 
 
 
@@ -33,10 +35,35 @@ export default function CreatePost() {
   const mapRef = useRef<MapView | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { token } = useAuth();
+  const [musicUrl, setMusicUrl] = useState('');
+  const [musicMetadata, setMusicMetadata] = useState<MusicMetadata | null>(null);
+  const [musicError, setMusicError] = useState('');
 
   useEffect(() => {
     fetchCurrentLocation();
   }, []);
+  useEffect(() => {
+    if (!musicUrl) {
+      setMusicMetadata(null);
+      setMusicError('');
+      return;
+    }
+
+    const loadMetadata = async () => {
+      try {
+        const metadata = await fetchMusicMetadata(musicUrl, token!);
+        setMusicMetadata(metadata);
+        setMusicError('');
+      } catch (err: any) {
+        setMusicMetadata(null);
+        setMusicError(err.message);
+      }
+    };
+
+    loadMetadata();
+  }, [musicUrl]);
+
 
   const fetchCurrentLocation = async () => {
     try {
@@ -221,13 +248,25 @@ export default function CreatePost() {
     setIsSubmitting(true); // ⬅️ Start spinner
 
     try {
-      const success = await createPost({
+      const payload = {
         text,
         image: images,
         location: location
           ? `${location.address} (${location.latitude}, ${location.longitude})`
           : undefined,
-      });
+        ...(musicMetadata && {
+          musicPlatform: musicMetadata.platform,
+          musicTrackId: musicMetadata.trackId,
+          musicTitle: musicMetadata.title,
+          musicArtist: musicMetadata.artist,
+          musicAlbumCover: musicMetadata.albumCover,
+          musicPreviewUrl: musicMetadata.previewUrl,
+        }),
+      };
+
+      console.log('[createPost payload]', payload);
+
+      const success = await createPost(payload);
 
       if (success) {
         setText('');
@@ -317,6 +356,36 @@ export default function CreatePost() {
               )}
             </View>
 
+            <TextInput
+              value={musicUrl}
+              onChangeText={setMusicUrl}
+              placeholder="Paste Spotify or YouTube Music link"
+              className="border px-3 py-2 rounded mb-2"
+            />
+
+            {musicError ? (
+              <Text className="text-red-500 text-sm mb-2">{musicError}</Text>
+            ) : musicMetadata ? (
+              <View className="flex-row items-center p-3 border rounded bg-gray-50 mb-2">
+                {/* Album Art */}
+                <Image
+                  source={{ uri: musicMetadata.albumCover }}
+                  className="w-16 h-16 rounded mr-3"
+                  resizeMode="cover"
+                />
+
+                {/* Text Content */}
+                <View className="flex-1">
+                  <Text className="font-semibold text-base text-gray-900" numberOfLines={1}>
+                    {musicMetadata.title}
+                  </Text>
+                  <Text className="text-sm text-gray-600" numberOfLines={1}>
+                    {musicMetadata.artist}
+                  </Text>
+                </View>
+              </View>
+
+            ) : null}
 
             {/* Text Input */}
             <TextInput

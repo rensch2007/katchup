@@ -23,6 +23,7 @@ const roomRoutes = require('./routes/roomRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
+const musicRoutes = require('./routes/musicRoutes');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -52,6 +53,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/music', musicRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

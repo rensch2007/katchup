@@ -40,7 +40,20 @@ router.post('/', async (req, res) => {
   console.log('[POST /api/posts] Incoming body:', req.body);
 
   try {
-    const { text, images, location, roomId, createdBy } = req.body;
+    const {
+  text,
+  images,
+  location,
+  roomId,
+  createdBy,
+  musicPlatform,
+  musicTrackId,
+  musicTitle,
+  musicArtist,
+  musicAlbumCover,
+  musicPreviewUrl
+} = req.body;
+
 
     if (!roomId || !createdBy) {
       console.error('[POST ERROR] Missing roomId or createdBy');
@@ -49,17 +62,29 @@ router.post('/', async (req, res) => {
         message: 'roomId and createdBy are required',
       });
     }
+console.log('[POST /api/posts] Incoming body:', req.body);
 
-    const newPost = new Post({
-      text,
-      images,
-      location,
-      roomId,
-      createdBy,
-    });
+const newPost = new Post({
+  text,
+  images,
+  location,
+  roomId,
+  createdBy,
+  musicPlatform,
+  musicTrackId,
+  musicTitle,
+  musicArtist,
+  musicAlbumCover,
+  musicPreviewUrl,
+});
+
+console.log('[DEBUG] newPost:', newPost);
+
+
 
     await newPost.save();
     console.log('[POST] Saved post successfully:', newPost);
+    
     // Trigger streak logic
     updateRoomStreakIfEligible({
       userId: createdBy,
