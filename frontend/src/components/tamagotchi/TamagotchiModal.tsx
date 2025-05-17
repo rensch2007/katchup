@@ -1,4 +1,3 @@
-// components/tamagotchi/TamagotchiModal.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -29,15 +28,21 @@ type Props = {
   streak: number;
 };
 
+const buttonMatrix = [
+  ['Feed', 'Play'],
+  ['Water', 'Settings'],
+];
+
 export default function TamagotchiModal({ visible, onClose, streak }: Props) {
   const bounceAnim = useState(new Animated.Value(1))[0];
+  const [cursor, setCursor] = useState<[number, number]>([0, 0]);
 
   useEffect(() => {
     if (visible) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(bounceAnim, {
-            toValue: 1.08,
+            toValue: 1.1,
             duration: 600,
             useNativeDriver: true,
           }),
@@ -51,78 +56,196 @@ export default function TamagotchiModal({ visible, onClose, streak }: Props) {
     }
   }, [visible]);
 
+  const handleDpad = (dir: 'up' | 'down' | 'left' | 'right') => {
+    setCursor(([row, col]) => {
+      if (dir === 'up') return [Math.max(row - 1, 0), col];
+      if (dir === 'down') return [Math.min(row + 1, 1), col];
+      if (dir === 'left') return [row, Math.max(col - 1, 0)];
+      if (dir === 'right') return [row, Math.min(col + 1, 1)];
+      return [row, col];
+    });
+  };
+
+  const handleSelect = () => {
+    const label = buttonMatrix[cursor[0]][cursor[1]];
+    alert(`${label} selected!`);
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View className="flex-1 justify-center items-center bg-black/50 px-4">
-        {/* Outer shell */}
         <View
-          className="items-center justify-start shadow-xl rounded-[40px] p-4"
           style={{
-            backgroundColor: '#E6D4F0', // pastel purple
             width: 320,
-            height: 480,
-            borderWidth: 4,
-            borderColor: '#D3BEEA',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.2,
-            shadowRadius: 20,
-            elevation: 10,
+            height: 600,
+            borderRadius: 32,
+            backgroundColor: '#FBCACA',
+            padding: 20,
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          {/* Close Button */}
-          <Pressable
-            onPress={onClose}
-            style={{ position: 'absolute', top: 14, right: 14 }}
+          {/* LCD */}
+          <View
+            style={{
+              backgroundColor: '#D9D9D9',
+              borderRadius: 24,
+              width: '100%',
+              height: 360,
+              paddingVertical: 20,
+              paddingHorizontal: 16,
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+            }}
           >
+            {/* Character */}
+            <View style={{ alignItems: 'center' }}>
+              <Animated.Image
+                source={getStageImage(streak)}
+                style={{
+                  width: 100,
+                  height: 100,
+                  transform: [{ scale: bounceAnim }],
+                  marginTop: 50,
+                }}
+              />
+            </View>
+
+            {/* Button Grid - pushed lower */}
+            <View style={{ marginTop: 'auto', marginBottom: 8 }}>
+              {[0, 1].map((row) => (
+                <View key={row} className="flex-row justify-between mb-3">
+                  {[0, 1].map((col) => {
+                    const label = buttonMatrix[row][col];
+                    const selected = cursor[0] === row && cursor[1] === col;
+                    return (
+                      <View
+                        key={label}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          width: '48%',
+                        }}
+                      >
+                        {selected && (
+                          <Text
+                            style={{
+                              marginRight: 8,
+                              fontWeight: 'bold',
+                              fontSize: 14,
+                            }}
+                          >
+                            ➤
+                          </Text>
+                        )}
+                        <View
+                          style={{
+                            flex: 1,
+                            backgroundColor: selected ? '#F87171' : '#FECACA',
+                            paddingVertical: 6,
+                            borderRadius: 4,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Text style={{ fontWeight: 'bold', fontSize: 12, color: '#000' }}>
+                            {label}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Controller */}
+          <View
+            style={{
+              flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+    gap: 68,
+            }}
+          >
+            {/* D-pad */}
+            <View style={{ width: 72, height: 72, position: 'relative' }}>
+              {[
+                ['up', { top: 0, left: '50%', transform: [{ translateX: -12 }] }],
+                ['down', { bottom: 0, left: '50%', transform: [{ translateX: -12 }] }],
+                ['left', { top: '50%', left: 0, transform: [{ translateY: -12 }] }],
+                ['right', { top: '50%', right: 0, transform: [{ translateY: -12 }] }],
+              ].map(([dir, style]) => (
+                <Pressable
+                  key={dir}
+                  onPress={() => handleDpad(dir as any)}
+                  style={{
+                    position: 'absolute',
+                    width: 24,
+                    height: 24,
+                    backgroundColor: '#9CA3AF',
+                    borderRadius: 2,
+                    ...style as any,
+                  }}
+                />
+              ))}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: 24,
+                  height: 24,
+                  backgroundColor: '#9CA3AF',
+                  transform: [{ translateX: -12 }, { translateY: -12 }],
+                  borderRadius: 2,
+                }}
+              />
+            </View>
+
+            {/* A/B Buttons with proper spacing */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable
+                onPress={handleSelect}
+                style={{
+                  width: 24,
+                  height: 24,
+                  backgroundColor: '#9CA3AF',
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderColor: '#4B5563',
+                }}
+              />
+              <Pressable
+                onPress={onClose}
+                style={{
+                  width: 24,
+                  height: 24,
+                  backgroundColor: '#9CA3AF',
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderColor: '#4B5563',
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Exit Button */}
+          <Pressable onPress={onClose}>
             <View
-              className="w-8 h-8 rounded-full bg-white items-center justify-center shadow"
-              style={{ elevation: 4 }}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 4,
+                backgroundColor: '#F87171',
+                borderRadius: 6,
+                marginTop: 12,
+              }}
             >
-              <Text className="text-gray-500 text-lg">✕</Text>
+              <Text className="text-white text-base">exit</Text>
             </View>
           </Pressable>
-
-          {/* Top light or speaker dots */}
-          <View className="flex-row space-x-1 mt-2 mb-1">
-            {[...Array(5)].map((_, i) => (
-              <View key={i} className="w-1.5 h-1.5 rounded-full bg-gray-400 opacity-30" />
-            ))}
-          </View>
-
-          {/* Screen area */}
-          <View
-            className="rounded-xl bg-[#C8D6C2] mt-2 mb-4 items-center justify-center"
-            style={{ width: '88%', height: 220, borderWidth: 2, borderColor: '#9BAE94' }}
-          >
-            <Animated.Image
-              source={getStageImage(streak)}
-              style={{
-                width: 100,
-                height: 100,
-                transform: [{ scale: bounceAnim }],
-              }}
-            />
-            <Text className="text-sm font-semibold text-gray-700 mt-2">Your Katchup</Text>
-          </View>
-
-          {/* Interaction buttons */}
-          <View className="flex-row justify-between w-full px-6 mt-2">
-            {[
-              { label: 'Feed', emoji: '🍽', color: '#FECACA' },
-              { label: 'Play', emoji: '🎾', color: '#BFDBFE' },
-              { label: 'Water', emoji: '💧', color: '#BBF7D0' },
-            ].map((btn, i) => (
-              <Pressable
-                key={i}
-                onPress={() => alert(`${btn.label}ed!`)}
-                style={{ backgroundColor: btn.color }}
-                className="rounded-full w-16 h-16 items-center justify-center shadow"
-              >
-                <Text className="text-lg">{btn.emoji}</Text>
-              </Pressable>
-            ))}
-          </View>
         </View>
       </View>
     </Modal>
