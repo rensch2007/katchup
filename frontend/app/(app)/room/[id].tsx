@@ -15,8 +15,6 @@ import Layout from '../../../src/components/Layout';
 import PostCard from '../../../src/components/PostCard';
 import { BASE_URL } from '../../../src/config';
 import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
-
-import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
 import FooterNavBar from '../../../src/components/Footer'; 
 type Post = {
   _id: string;
@@ -64,14 +62,6 @@ const getNextStageTarget = (streak: number) => {
   if (streak < 7) return 7;
   return null; // fully evolved
 };
-
-
-  const getNextStageTarget = (streak: number) => {
-    if (streak < 2) return 2;
-    if (streak < 5) return 5;
-    if (streak < 7) return 7;
-    return null; // fully evolved
-  };
 
 
   const [postedUserIds, setPostedUserIds] = useState<string[]>([]);
