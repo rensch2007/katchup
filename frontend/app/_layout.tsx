@@ -5,6 +5,7 @@ import { RoomProvider } from '../src/store/roomContext';
 import { NotificationProvider } from '../src/store/notificationContext';
 import { PostProvider } from '../src/store/postContext'; // ✅ add this
 import './global.css';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function AuthRedirect() {
   const { user, token, isLoading } = useAuth();
@@ -32,19 +33,21 @@ function AuthRedirect() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RoomProvider>
-        <PostProvider> 
-          <NotificationProvider>
-            <AuthRedirect />
-            <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(app)" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
-            </Stack>
-          </NotificationProvider>
-        </PostProvider>
-      </RoomProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <RoomProvider>
+          <PostProvider> 
+            <NotificationProvider>
+              <AuthRedirect />
+              <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(app)" options={{ gestureEnabled: false }} />
+                <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
+              </Stack>
+            </NotificationProvider>
+          </PostProvider>
+        </RoomProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

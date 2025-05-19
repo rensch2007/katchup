@@ -16,6 +16,8 @@ import PostCard from '../../../src/components/PostCard';
 import { BASE_URL } from '../../../src/config';
 import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
 
+import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
+import FooterNavBar from '../../../src/components/Footer'; 
 type Post = {
   _id: string;
   text: string;
@@ -62,6 +64,14 @@ const getNextStageTarget = (streak: number) => {
   if (streak < 7) return 7;
   return null; // fully evolved
 };
+
+
+  const getNextStageTarget = (streak: number) => {
+    if (streak < 2) return 2;
+    if (streak < 5) return 5;
+    if (streak < 7) return 7;
+    return null; // fully evolved
+  };
 
 
   const [postedUserIds, setPostedUserIds] = useState<string[]>([]);
@@ -264,14 +274,8 @@ const getNextStageTarget = (streak: number) => {
         />
 
         {/* Bottom Create Post Bar */}
-        <View className="absolute bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex-row items-center justify-center">
-          <Pressable
-            onPress={handleCreatePost}
-            className="px-6 py-2 bg-red-500 rounded-lg"
-          >
-            <Text className="text-white font-bold text-center">Create Post</Text>
-          </Pressable>
-        </View>
+        <FooterNavBar />
+
       </View>
     </Layout>
   );
