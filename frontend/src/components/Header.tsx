@@ -7,7 +7,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar: () => void })
 
   return (
     <View className="flex-row justify-between items-center px-4 py-3">
-      <Text className="text-xl font-bold">Katchup</Text>
+      <Text className="text-xl font-bold text-red-500" >Katchup</Text>
       <View className="flex-row space-x-6 items-center">
         <Pressable onPress={() => router.push('/(app)/notifications')}>
           <Bell color={'#000000'} size={24} />

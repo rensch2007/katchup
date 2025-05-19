@@ -30,7 +30,7 @@ import {
     }, [sidebarOpen]);
   
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0} // adjust based on header height
