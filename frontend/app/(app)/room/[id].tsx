@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   Pressable,
   FlatList,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useRoom } from '../../../src/store/roomContext';
@@ -13,6 +14,7 @@ import { useAuth } from '../../../src/store/authContext';
 import Layout from '../../../src/components/Layout';
 import PostCard from '../../../src/components/PostCard';
 import { BASE_URL } from '../../../src/config';
+import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
 
 import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
 import FooterNavBar from '../../../src/components/Footer'; 
@@ -49,12 +51,20 @@ export default function RoomDetailScreen() {
   const PAGE_SIZE = 10;
 
   const getStreakEmoji = (count: number) => {
-    if (count >= 7) return '🍅🔥💥';
-    if (count >= 5) return '🍅🍅';
-    if (count >= 3) return '🍅';
-    if (count >= 2) return '🌿';
-    return '🌱';
-  };
+  if (count >= 7) return '🍅🔥💥';
+  if (count >= 5) return '🍅🍅';
+  if (count >= 3) return '🍅';
+  if (count >= 2) return '🌿';
+  return '🌱';
+};
+
+const getNextStageTarget = (streak: number) => {
+  if (streak < 2) return 2;
+  if (streak < 5) return 5;
+  if (streak < 7) return 7;
+  return null; // fully evolved
+};
+
 
   const getNextStageTarget = (streak: number) => {
     if (streak < 2) return 2;
@@ -201,56 +211,57 @@ export default function RoomDetailScreen() {
           }}
           onEndReachedThreshold={0.5}
           ListHeaderComponent={
-            <View className="items-center mb-4 space-y-2">
+  <View className="items-center mb-4 space-y-2">
 
 
-              {/* Tamagotchi + Progress Row */}
-              <View className="flex-row items-center w-full max-w-md justify-between px-4 mt-1">
-                {/* Current Tamagotchi Preview (clickable) */}
-                <View className="items-center justify-center">
-                  <TamagotchiPreview streak={currentRoom.collectiveStreakCount ?? 0} />
-                </View>
+    {/* Tamagotchi + Progress Row */}
+  <View className="flex-row items-center w-full max-w-md justify-between px-4 mt-1">
+  {/* Current Tamagotchi Preview (clickable) */}
+  <View className="items-center justify-center">
+    <TamagotchiPreview streak={currentRoom.collectiveStreakCount ?? 0} />
+  </View>
 
-                {/* Progress Bar + Stats */}
-                <View className="flex-1 mx-3 items-center">
-                  <Text className="text-base font-semibold text-gray-700 mb-1">
-                    {getStreakEmoji(currentRoom.collectiveStreakCount ?? 0)}{' '}
-                    {currentRoom.collectiveStreakCount ?? 0}-day streak
-                  </Text>
+  {/* Progress Bar + Stats */}
+  <View className="flex-1 mx-3 items-center">
+    <Text className="text-base font-semibold text-gray-700 mb-1">
+      {getStreakEmoji(currentRoom.collectiveStreakCount ?? 0)}{' '}
+      {currentRoom.collectiveStreakCount ?? 0}-day streak
+    </Text>
 
-                  <View className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-1">
-                    <View
-                      className="bg-red-400 h-full rounded-full"
-                      style={{
-                        width: `${((currentRoom.collectiveStreakCount ?? 0) /
-                          (getNextStageTarget(currentRoom.collectiveStreakCount ?? 1) ?? 1)) * 100
-                          }%`,
-                      }}
-                    />
-                  </View>
+    <View className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-1">
+      <View
+        className="bg-red-400 h-full rounded-full"
+        style={{
+          width: `${
+            ((currentRoom.collectiveStreakCount ?? 0) /
+              (getNextStageTarget(currentRoom.collectiveStreakCount ?? 1) ?? 1)) * 100
+          }%`,
+        }}
+      />
+    </View>
 
-                  <Text className="text-xs text-gray-500">
-                    {postedUserIds.length} / {allMemberIds.length} members have posted
-                  </Text>
-                  <Text className="text-sm text-red-500 font-medium">
-                    {youPostedToday ? '✅ You’ve posted today!' : '❗ You haven’t posted yet today'}
-                  </Text>
-                </View>
+    <Text className="text-xs text-gray-500">
+      {postedUserIds.length} / {allMemberIds.length} members have posted
+    </Text>
+    <Text className="text-sm text-red-500 font-medium">
+      {youPostedToday ? '✅ You’ve posted today!' : '❗ You haven’t posted yet today'}
+    </Text>
+  </View>
 
-                {/* Next Stage Tamagotchi (blurred) */}
-                <View className="items-center justify-center">
-                  <View style={{ position: 'relative' }}>
-                    <Image
-                      source={require('../../../assets/tamagotchi/sprout.png')}
-                      style={{ width: 65, height: 65, opacity: 0.2 }}
-                    />
-                    <View className="absolute w-11 h-11 rounded-full bg-white/40 top-0 left-0" />
-                  </View>
-                </View>
-              </View>
+  {/* Next Stage Tamagotchi (blurred) */}
+  <View className="items-center justify-center">
+    <View style={{ position: 'relative' }}>
+      <Image
+        source={require('../../../assets/tamagotchi/sprout.png')}
+        style={{ width: 65, height: 65, opacity: 0.2 }}
+      />
+      <View className="absolute w-11 h-11 rounded-full bg-white/40 top-0 left-0" />
+    </View>
+  </View>
+</View>
 
-            </View>
-          }
+  </View>
+}
 
 
           ListFooterComponent={
