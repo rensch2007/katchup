@@ -3,7 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, Image, ScrollView, FlatList, ActivityIndicator, Platform, TouchableOpacity, KeyboardAvoidingView,
   Keyboard,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Linking,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +19,12 @@ import Constants from 'expo-constants';
 import Layout from '../../src/components/Layout';
 import { fetchMusicMetadata, MusicMetadata } from '../../src/store/musicContext';
 import { useAuth } from '../../src/store/authContext';
+import * as Clipboard from 'expo-clipboard';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { AntDesign, Entypo } from '@expo/vector-icons';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import Modal from 'react-native-modal';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 
 
@@ -39,10 +47,17 @@ export default function CreatePost() {
   const [musicUrl, setMusicUrl] = useState('');
   const [musicMetadata, setMusicMetadata] = useState<MusicMetadata | null>(null);
   const [musicError, setMusicError] = useState('');
+  const captionRef = useRef<TextInput>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
   useEffect(() => {
     fetchCurrentLocation();
   }, []);
+
   useEffect(() => {
     if (!musicUrl) {
       setMusicMetadata(null);
@@ -300,103 +315,180 @@ export default function CreatePost() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView className="flex-1 p-4" ref={scrollViewRef} keyboardShouldPersistTaps="handled">
-            <Text className="text-2xl font-bold mb-4">Create Post</Text>
-
-            {/* Image Picker */}
-            <View className="border-2 border-dashed border-gray-300 rounded-xl p-4 mb-6 min-h-[150px]">
-              {images.length === 0 ? (
-                <Pressable
-                  onPress={pickImages}
-                  className="flex-1 items-center justify-center min-h-[150px]"
-                >
-                  <Text className="text-gray-400">📷 Tap here to select photos</Text>
-                </Pressable>
-              ) : (
-                <View>
-                  <FlatList
-                    data={[...images, 'add']}
-                    scrollEnabled={true}
-                    horizontal={true}
-                    nestedScrollEnabled={true}
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={{ paddingVertical: 15 }} // better spacing
-                    renderItem={({ item, index }) =>
-                      item === 'add' ? (
-                        images.length < 10 && (
-                          <Pressable
-                            onPress={pickImages}
-                            className="w-24 h-24 bg-gray-100 rounded-lg items-center justify-center mr-3"
-                          >
-                            <Text className="text-3xl text-gray-400">+</Text>
-                          </Pressable>
-                        )
-                      ) : (
-                        <View className="relative mr-3">
-                          <Image
-                            source={{ uri: item }}
-                            className="w-24 h-24 rounded-lg"
-                            resizeMode="cover"
-                          />
-                          <Pressable
-                            onPress={() => removeImage(index)}
-                            className="absolute -right-2 bg-black rounded-full p-1"
-                          >
-                            <Text className="text-white text-xs"> ✕ </Text>
-                          </Pressable>
-                        </View>
-                      )
-                    }
-                    style={{ height: 120 }} // force height for horizontal scrolling
-                  />
-                  <Text className="text-gray-500 text-xs mt-2 text-right">
-                    {images.length}/10 photos
-                  </Text>
-                </View>
-              )}
+            <View className="flex-row items-center mb-6">
+              <View className="flex-1 h-px bg-gray-200" />
+              <Text className="text-sm text-gray-500">
+                ✍️ <Text className="font-semibold text-gray-600">New Post</Text>
+              </Text>
+              <View className="flex-1 h-px bg-gray-200" />
             </View>
 
-            <TextInput
-              value={musicUrl}
-              onChangeText={setMusicUrl}
-              placeholder="Paste Spotify or YouTube Music link"
-              className="border px-3 py-2 rounded mb-2"
-            />
 
-            {musicError ? (
-              <Text className="text-red-500 text-sm mb-2">{musicError}</Text>
-            ) : musicMetadata ? (
-              <View className="flex-row items-center p-3 border rounded bg-gray-50 mb-2">
-                {/* Album Art */}
-                <Image
-                  source={{ uri: musicMetadata.albumCover }}
-                  className="w-16 h-16 rounded mr-3"
-                  resizeMode="cover"
-                />
+            {/* Image Picker */}
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-2">🖼️ Images</Text>
 
-                {/* Text Content */}
-                <View className="flex-1">
-                  <Text className="font-semibold text-base text-gray-900" numberOfLines={1}>
-                    {musicMetadata.title}
-                  </Text>
-                  <Text className="text-sm text-gray-600" numberOfLines={1}>
-                    {musicMetadata.artist}
+              <DraggableFlatList
+                data={[...images, ...(images.length < 10 ? ['add'] : [])]}
+                onDragEnd={({ data }) => {
+                  // Filter out the 'add' slot before updating
+                  const filtered = data.filter((item) => item !== 'add');
+                  setImages(filtered as string[]);
+                }}
+                keyExtractor={(item, index) => `${item}-${index}`}
+                horizontal
+                contentContainerStyle={{ paddingVertical: 12 }}
+                showsHorizontalScrollIndicator={false}
+                renderItem={({ item, drag, isActive }: RenderItemParams<string | 'add'>) => {
+                  if (item === 'add') {
+                    return (
+                      <Pressable
+                        onPress={pickImages}
+                        className="w-24 h-24 bg-gray-100 rounded-xl items-center justify-center border-2 border-dashed border-gray-300 ml-2"
+                      >
+                        <Text className="text-3xl text-gray-400">+</Text>
+                      </Pressable>
+                    );
+                  }
+
+                  return (
+                    <Pressable
+                      onLongPress={drag}
+                      onPress={() => setPreviewIndex(images.indexOf(item))}
+
+                      disabled={isActive}
+                      className="relative mr-3"
+                    >
+                      <Image
+                        source={{ uri: item }}
+                        className="w-24 h-24 rounded-xl"
+                        resizeMode="cover"
+                      />
+                      <Pressable
+                        onPress={() => removeImage(images.indexOf(item))}
+                        className="absolute -top-2 -right-2 bg-black bg-opacity-60 rounded-full p-1"
+                      >
+                        <Text className="text-white text-xs">✕</Text>
+                      </Pressable>
+                    </Pressable>
+                  );
+                }}
+              />
+
+              <Text className="text-gray-500 text-xs text-right">
+                {images.length}/10 photos
+              </Text>
+            </View>
+
+
+
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-2">🎶 Add Music</Text>
+
+              <Pressable
+                onPress={async () => {
+                  const clipboardContent = await Clipboard.getStringAsync();
+                  setMusicUrl(clipboardContent);
+                }}
+                className="flex-row items-center justify-between px-4 py-3 bg-[#f1f5f9] rounded-2xl border border-gray-200 shadow-sm active:opacity-70"
+              >
+                <View className="flex-row items-center space-x-3">
+                  <Text className="text-xl">🎧</Text>
+                  <Text className="text-gray-800 font-medium text-base">
+                    Import Music Here
                   </Text>
                 </View>
-              </View>
+                <Text className="text-sm text-gray-500">Paste URL</Text>
+              </Pressable>
 
-            ) : null}
+              {musicError ? (
+                <Text className="text-red-500 text-sm mt-2">{musicError}</Text>
+              ) : musicMetadata ? (
+                <Animated.View
+                  entering={FadeIn.duration(300)}
+                  className="mt-4 p-4 rounded-2xl border border-gray-300 bg-white shadow-sm flex-row items-center"
+                >
+                  <Image
+                    source={{ uri: musicMetadata.albumCover }}
+                    className="w-16 h-16 rounded-lg mr-4"
+                    resizeMode="cover"
+                  />
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
+                      {musicMetadata.title}
+                    </Text>
+                    <Text className="text-sm text-gray-500 mt-0.5" numberOfLines={1}>
+                      {musicMetadata.artist}
+                    </Text>
+                    <View className="flex-row items-center mt-1 space-x-1">
+                      {musicMetadata.platform === 'spotify' ? (
+                        <Entypo name="spotify" size={14} color="#1DB954" />
+                      ) : (
+                        <AntDesign name="youtube" size={14} color="#FF0000" />
+                      )}
+                      <Text className="text-xs text-gray-400">
+                        {musicMetadata.platform === 'spotify' ? 'Spotify' : 'YouTube'}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(musicMetadata.previewUrl!)}
+                    className="ml-3 p-2 rounded-full bg-gray-200"
+                  >
+                    <AntDesign name="arrowright" size={20} color="#000" />
+                  </TouchableOpacity>
+
+                </Animated.View>
+              ) : null}
+            </View>
+
+
 
             {/* Text Input */}
-            <TextInput
-              className="border rounded p-3 mb-4 h-32 text-base"
-              multiline
-              placeholder="What's on your mind?"
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-2">📝 Caption</Text>
+              <TextInput
+                className="bg-white border border-gray-300 rounded-2xl p-4 text-base min-h-[120px] shadow-sm"
+                placeholder="Share what’s on your mind..."
+                placeholderTextColor="#9CA3AF"
+                value={text}
+                onChangeText={setText}
+                multiline
+                onKeyPress={({ nativeEvent }) => {
+                  if (nativeEvent.key === 'Enter') {
+                    Keyboard.dismiss();
+                  }
+                }}
+                textAlignVertical="top"
+                ref={captionRef}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+                style={{
+                  backgroundColor: 'white',
+                  borderColor: '#D1D5DB',
+                  borderWidth: 1,
+                  borderRadius: 16,
+                  padding: 16,
+                  fontSize: 16,
+                  shadowColor: '#000',
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  shadowOffset: { width: 0, height: 1 },
+                  minHeight: 120,
+                  textAlignVertical: 'top',
+                }}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollTo({
+                      y: 350,
+                      animated: true,
+                    });
+                  }, 150);
+                }}
 
-              placeholderTextColor="#808080"
-              value={text}
-              onChangeText={setText}
-            />
+              />
+            </View>
+
 
             {/* Location */}
             <View className="mb-6">
@@ -404,42 +496,54 @@ export default function CreatePost() {
 
               {/* Search Input with Current Location and Clear */}
               <View className="flex-row items-center mb-2 space-x-2">
-                {/* Search Field + Buttons */}
                 <View className="flex-1 relative">
                   <TextInput
-                    className="border rounded p-3 pl-10 pr-10 bg-white"
+                    className="bg-white pl-10 pr-10 border border-gray-300 text-base"
+                    style={{
+                      borderRadius: 16,
+                      paddingVertical: 10,
+                      height: 48, // consistent height for input + icon
+                      fontSize: 16,
+                      lineHeight: 20,
+                      shadowColor: '#000',
+                      shadowOpacity: 0.05,
+                      shadowRadius: 2,
+                      shadowOffset: { width: 0, height: 1 },
+                      textAlignVertical: 'center',
+                    }}
                     placeholder="Search for a place"
+                    placeholderTextColor="#9CA3AF"
                     value={searchQuery}
                     onChangeText={handleSearch}
                     onFocus={() => {
                       setIsPickingLocation(true);
-
                       setTimeout(() => {
                         scrollViewRef.current?.scrollTo({
-                          y: 300, // Adjust this value depending on how far down your MapView is
+                          y: 500,
                           animated: true,
                         });
-                      }, 300); // wait a bit to let the map render
+                      }, 300);
                     }}
                   />
 
-
-                  {/* 📍 Current Location Button */}
+                  {/* Left Icon */}
                   <Pressable
                     onPress={fetchCurrentLocation}
-                    className="absolute left-3 top-0 bottom-0 justify-center"
+                    className="absolute left-3 top-0 bottom-0 justify-center items-center"
+                    hitSlop={10}
                   >
-                    <LocateFixed size={18} color="#6b7280" />
+                    <Text className="text-gray-400 text-base">📍</Text>
                   </Pressable>
 
-                  {/* ✖️ Clear Button */}
+
+                  {/* Right Clear Button */}
                   {searchQuery.length > 0 && (
                     <Pressable
                       onPress={() => {
                         setSearchQuery('');
                         setSearchResults([]);
                       }}
-                      className="absolute right-3 top-0 bottom-0 justify-center"
+                      className="absolute right-3 h-full justify-center items-center"
                     >
                       <Text className="text-gray-400 text-base">✖️</Text>
                     </Pressable>
@@ -447,31 +551,39 @@ export default function CreatePost() {
                 </View>
               </View>
 
+
               {/* Suggestion Dropdown */}
               {searchResults.length > 0 && (
-                <View className="border rounded bg-white max-h-60 mb-2">
+                <View className="bg-white rounded-2xl border border-gray-200 shadow-sm max-h-64 mb-3 overflow-hidden">
                   {searchResults.map((item, index) => (
                     <Pressable
                       key={index}
                       onPress={() => {
-                        fetchPlaceDetails(item.place_id, item.description); // pass description too
+                        fetchPlaceDetails(item.place_id, item.description);
                         setSearchResults([]);
                         setIsPickingLocation(true);
                       }}
-                      className="p-3 border-b border-gray-200"
+                      className={`flex-row items-start px-4 py-3 ${index !== searchResults.length - 1 ? 'border-b border-gray-100' : ''}`}
                     >
-                      <Text>{item.description}</Text>
+                      <Text className="text-lg mr-3">📍</Text>
+                      <View className="flex-1">
+                        <Text className="text-sm text-gray-900" numberOfLines={2}>
+                          {item.description}
+                        </Text>
+                      </View>
                     </Pressable>
                   ))}
                 </View>
               )}
 
+
               {/* MapView */}
               {isPickingLocation && region && (
-                <>
+                <View className="relative mt-2">
+                  {/* Map */}
                   <MapView
                     ref={mapRef}
-                    style={{ height: 200, borderRadius: 12 }}
+                    style={{ height: 200, borderRadius: 16 }}
                     region={region}
                     onPress={handleMapPress}
                     showsUserLocation={true}
@@ -479,15 +591,24 @@ export default function CreatePost() {
                     <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }} />
                   </MapView>
 
-                  {/* Save Location Button */}
+                  {/* Current Location Button - bottom right inside map */}
+                  <Pressable
+                    onPress={fetchCurrentLocation}
+                    className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow items-center justify-center"
+                  >
+                    <LocateFixed size={18} color="#4B5563" />
+                  </Pressable>
+
+                  {/* Save & Close */}
                   <Pressable
                     onPress={() => setIsPickingLocation(false)}
-                    className="bg-gray-500 rounded-lg p-3 mt-3"
+                    className="mt-4 px-4 py-3 bg-gray-800 rounded-2xl shadow-sm"
                   >
-                    <Text className="text-white text-center font-medium">Save & Close</Text>
+                    <Text className="text-white text-center font-medium text-base">Save & Close</Text>
                   </Pressable>
-                </>
+                </View>
               )}
+
 
               {/* Loading */}
               {loadingLocation && (
@@ -510,6 +631,75 @@ export default function CreatePost() {
                 <Text className="text-white text-center font-medium">Post</Text>
               )}
             </Pressable>
+            <Modal
+              isVisible={previewIndex !== null}
+              onBackdropPress={() => setPreviewIndex(null)}
+              onBackButtonPress={() => setPreviewIndex(null)}
+              style={{ margin: 0 }}
+              useNativeDriver
+            >
+              <>
+                <ImageViewer
+                  imageUrls={images.map((uri) => ({ url: uri }))}
+                  index={previewIndex ?? 0}
+                  enableSwipeDown
+                  onSwipeDown={() => setPreviewIndex(null)}
+                  onCancel={() => setPreviewIndex(null)}
+                  backgroundColor="rgba(0,0,0,0.95)"
+                  renderIndicator={(currentIndex, allSize) => (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: Platform.OS === 'ios' ? 60 : 40,
+                        alignSelf: 'center',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                        borderRadius: 20,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 13 }}>
+                        {currentIndex} / {allSize}
+                      </Text>
+                    </View>
+                  )}
+                  renderHeader={() => (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: Platform.OS === 'ios' ? 60 : 40,
+                        right: 20,
+                        zIndex: 10,
+                      }}
+                    >
+                      <Pressable
+                        onPress={() => setPreviewIndex(null)}
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.9)',
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 999,
+                          shadowColor: '#000',
+                          shadowOpacity: 0.1,
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowRadius: 4,
+                        }}
+                      >
+                        <Text style={{ color: '#111', fontWeight: '600' }}>Close</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                />
+              </>
+            </Modal>
+            {isSubmitting && (
+              <View className="absolute inset-0 bg-white/70 z-50 items-center justify-center">
+                <ActivityIndicator size="large" color="#EF4444" />
+                <Text className="mt-4 text-base text-gray-700 font-medium">Uploading...</Text>
+              </View>
+            )}
+
+
 
           </ScrollView></TouchableWithoutFeedback>
       </KeyboardAvoidingView>
