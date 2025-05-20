@@ -1,5 +1,48 @@
 const mongoose = require('mongoose');
 
+// Inline Tamagotchi schema
+const TamagotchiSchema = new mongoose.Schema({
+  main: {
+    character: { type: String, default: 'katchup' },
+    stage: {
+      type: String,
+      enum: ['seed', 'sprout', 'tomato', 'bottle'],
+      default: 'seed',
+    },
+    stats: {
+      hunger: { type: Number, default: 60 },
+      happiness: { type: Number, default: 60 },
+      thirst: { type: Number, default: 60 },
+    },
+    health: { type: Number, default: 100 },
+    deathCount: { type: Number, default: 0 },
+    lastDecayDate: { type: Date, default: null },
+  },
+
+  currentGrowingFriend: {
+    name: { type: String, default: 'seedling' },
+    stage: {
+      type: String,
+      enum: ['seed', 'sprout', 'tomato', 'bottle'],
+      default: 'seed',
+    },
+    stats: {
+      hunger: { type: Number, default: 60 },
+      happiness: { type: Number, default: 60 },
+      thirst: { type: Number, default: 60 },
+    },
+    evolutionStreak: { type: Number, default: 0 },
+    daysSurvived: { type: Number, default: 0 },
+    lastDecayDate: { type: Date, default: null },
+  },
+
+  friends: [{
+    name: { type: String, required: true },
+    unlockedAt: { type: Date, default: Date.now },
+    social: { type: Number, default: 50 },
+  }],
+}, { _id: false });
+
 const RoomSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -39,7 +82,7 @@ const RoomSchema = new mongoose.Schema({
     default: 0,
   },
   lastStreakDate: {
-    type: String, // Format: 'YYYY-MM-DD'
+    type: String,
     default: null,
   },
   streakHistory: [{
@@ -52,8 +95,20 @@ const RoomSchema = new mongoose.Schema({
   }],
   cutoffHourKST: {
     type: Number,
-    default: 3, // 3AM KST by default
+    default: 3,
   },
+
+  // ✅ Embedded tamagotchi logic
+  tamagotchi: { type: TamagotchiSchema, default: () => ({}) },
+
+  katchupPoints: {
+    type: Number,
+    default: 5, // you can adjust this baseline
+  },
+  katchupPostsToday: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    date: { type: String }, // Format: 'YYYY-MM-DD'
+  }],
 
   createdAt: {
     type: Date,
@@ -68,11 +123,9 @@ const RoomSchema = new mongoose.Schema({
 // Automatically add creator as a member
 RoomSchema.pre('save', function (next) {
   if (this.isNew) {
-    // Check if creator is already in members
     const creatorExists = this.members.some(memberId =>
       memberId.toString() === this.creator.toString()
     );
-
     if (!creatorExists) {
       this.members.push(this.creator);
     }

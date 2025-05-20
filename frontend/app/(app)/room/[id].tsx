@@ -15,7 +15,7 @@ import Layout from '../../../src/components/Layout';
 import PostCard from '../../../src/components/PostCard';
 import { BASE_URL } from '../../../src/config';
 import TamagotchiPreview from '../../../src/components/tamagotchi/TamagotchiPreview';
-import FooterNavBar from '../../../src/components/Footer'; 
+import FooterNavBar from '../../../src/components/Footer';
 type Post = {
   _id: string;
   text: string;
@@ -49,19 +49,43 @@ export default function RoomDetailScreen() {
   const PAGE_SIZE = 10;
 
   const getStreakEmoji = (count: number) => {
-  if (count >= 7) return '🍅🔥💥';
-  if (count >= 5) return '🍅🍅';
-  if (count >= 3) return '🍅';
-  if (count >= 2) return '🌿';
-  return '🌱';
-};
+    if (count >= 7) return '🍅🔥💥';
+    if (count >= 5) return '🍅🍅';
+    if (count >= 3) return '🍅';
+    if (count >= 2) return '🌿';
+    return '🌱';
+  };
 
-const getNextStageTarget = (streak: number) => {
-  if (streak < 2) return 2;
-  if (streak < 5) return 5;
-  if (streak < 7) return 7;
-  return null; // fully evolved
-};
+  const getBlendedEvolutionProgress = (tamagotchi: any) => {
+    if (!tamagotchi) return null;
+
+    const STAGES = [
+      { from: 'seed', to: 'sprout', days: 3, stats: 80, streak: 2 },
+      { from: 'sprout', to: 'tomato', days: 4, stats: 85, streak: 3 },
+      { from: 'tomato', to: 'bottle', days: 10, stats: 90, streak: 4 },
+    ];
+
+    const current = STAGES.find((s) => s.from === tamagotchi.stage);
+    if (!current) return null;
+
+    const survivalDays = tamagotchi.daysSurvived || 0;
+    const streakDays = tamagotchi.evolutionStreak || 0;
+    const stats = tamagotchi.stats || {};
+
+    const survivalPct = Math.min(survivalDays / current.days, 1);
+    const statThresholdMet =
+      stats.hunger >= current.stats &&
+      stats.happiness >= current.stats &&
+      stats.thirst >= current.stats;
+    const streakPct = statThresholdMet ? Math.min(streakDays / current.streak, 1) : 0;
+
+    return {
+      percent: Math.round(((survivalPct + streakPct) / 2) * 100),
+      nextStage: current.to,
+    };
+  };
+
+  const evoProgress = getBlendedEvolutionProgress(currentRoom?.tamagotchi);
 
 
   const [postedUserIds, setPostedUserIds] = useState<string[]>([]);
@@ -125,9 +149,6 @@ const getNextStageTarget = (streak: number) => {
     }
   };
 
-  const handleCreatePost = () => {
-    router.push('/(app)/create-post');
-  };
 
   const fetchStreakStatus = async () => {
     if (!token || !id) return;
@@ -201,57 +222,48 @@ const getNextStageTarget = (streak: number) => {
           }}
           onEndReachedThreshold={0.5}
           ListHeaderComponent={
-  <View className="items-center mb-4 space-y-2">
+  <View className="px-4 mb-4">
+    {/* Row with Tamagotchi and progress info */}
+    <View className="flex-row items-center justify-between">
+      {/* Tamagotchi on the left */}
+      <View className="items-center">
+        <TamagotchiPreview streak={currentRoom.collectiveStreakCount ?? 0} />
+      </View>
 
+      {/* Streak progress and post info on the right */}
+      <View className="flex-1 ml-4">
+        <Text className="text-base font-semibold text-gray-700">
+          {getStreakEmoji(currentRoom.collectiveStreakCount ?? 0)}{' '}
+          {currentRoom.collectiveStreakCount ?? 0}-day streak
+        </Text>
 
-    {/* Tamagotchi + Progress Row */}
-  <View className="flex-row items-center w-full max-w-md justify-between px-4 mt-1">
-  {/* Current Tamagotchi Preview (clickable) */}
-  <View className="items-center justify-center">
-    <TamagotchiPreview streak={currentRoom.collectiveStreakCount ?? 0} />
-  </View>
+        {evoProgress && (
+          <View className="mt-1">
+            <Text className="text-sm text-gray-600 font-medium">
+              Progress to <Text className="font-bold">{evoProgress.nextStage}</Text>{' '}
+              ({evoProgress.percent}%)
+            </Text>
+            <View className="w-full h-3 bg-gray-200 rounded-full mt-1 overflow-hidden">
+              <View
+                className="bg-emerald-400 h-full rounded-full"
+                style={{ width: `${evoProgress.percent}%` }}
+              />
+            </View>
+          </View>
+        )}
 
-  {/* Progress Bar + Stats */}
-  <View className="flex-1 mx-3 items-center">
-    <Text className="text-base font-semibold text-gray-700 mb-1">
-      {getStreakEmoji(currentRoom.collectiveStreakCount ?? 0)}{' '}
-      {currentRoom.collectiveStreakCount ?? 0}-day streak
-    </Text>
-
-    <View className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-1">
-      <View
-        className="bg-red-400 h-full rounded-full"
-        style={{
-          width: `${
-            ((currentRoom.collectiveStreakCount ?? 0) /
-              (getNextStageTarget(currentRoom.collectiveStreakCount ?? 1) ?? 1)) * 100
-          }%`,
-        }}
-      />
+        <Text className="text-xs text-gray-500 mt-2">
+          {postedUserIds.length} / {allMemberIds.length} members posted today
+        </Text>
+        <Text className="text-sm font-medium mt-1"
+          style={{ color: youPostedToday ? '#16a34a' : '#ef4444' }}>
+          {youPostedToday ? '✅ You’ve posted today!' : '❗ You haven’t posted yet today'}
+        </Text>
+      </View>
     </View>
-
-    <Text className="text-xs text-gray-500">
-      {postedUserIds.length} / {allMemberIds.length} members have posted
-    </Text>
-    <Text className="text-sm text-red-500 font-medium">
-      {youPostedToday ? '✅ You’ve posted today!' : '❗ You haven’t posted yet today'}
-    </Text>
-  </View>
-
-  {/* Next Stage Tamagotchi (blurred) */}
-  <View className="items-center justify-center">
-    <View style={{ position: 'relative' }}>
-      <Image
-        source={require('../../../assets/tamagotchi/sprout.png')}
-        style={{ width: 65, height: 65, opacity: 0.2 }}
-      />
-      <View className="absolute w-11 h-11 rounded-full bg-white/40 top-0 left-0" />
-    </View>
-  </View>
-</View>
-
   </View>
 }
+
 
 
           ListFooterComponent={
