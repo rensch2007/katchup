@@ -88,9 +88,25 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 
     res.status(200).json({
-      success: true,
-      data: room
-    });
+  success: true,
+  data: {
+    _id: room._id,
+    name: room.name,
+    creator: room.creator,
+    members: room.members,
+    invitations: room.invitations,
+    code: room.code,
+    tamagotchi: room.tamagotchi,
+    katchupPoints: room.katchupPoints,
+    collectiveStreakCount: room.collectiveStreakCount,
+    lastStreakDate: room.lastStreakDate,
+    streakHistory: room.streakHistory,
+    cutoffHourKST: room.cutoffHourKST,
+    createdAt: room.createdAt,
+    updatedAt: room.updatedAt
+  }
+});
+
   } catch (error) {
     console.error('Get room error:', error);
     res.status(500).json({

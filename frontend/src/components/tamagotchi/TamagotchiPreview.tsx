@@ -47,9 +47,9 @@ return (
       <Animated.View style={{ transform: [{ scale: bounceAnim }] }} className="items-center">
         <Image
           source={getStageImage(streak)}
-          style={{ width: 35, height: 35 }}
+          style={{ width: 55, height: 55 }}
         />
-        <Text className="text-xs text-gray-400 mt-1">Tap me!</Text>
+        <Text className="text-xs text-gray-400">Tap me!</Text>
       </Animated.View>
     </Pressable>
 
