@@ -25,6 +25,7 @@ import { AntDesign, Entypo } from '@expo/vector-icons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import Modal from 'react-native-modal';
 import ImageViewer from 'react-native-image-zoom-viewer';
+import FooterNavBar from '@/src/components/Footer';
 
 
 
@@ -703,6 +704,7 @@ export default function CreatePost() {
 
           </ScrollView></TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      <FooterNavBar />
     </Layout>
 
 
