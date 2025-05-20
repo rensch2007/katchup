@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { useNotification } from '../../src/store/notificationContext';
 import InvitationItem from '../../src/components/rooms/InvitationItem';
 import Layout from '../../src/components/Layout';
+import FooterNavBar from '../../src/components/Footer'; 
 export default function NotificationsScreen() {
   const {
     notifications,
@@ -120,6 +121,7 @@ export default function NotificationsScreen() {
           <Text className="text-gray-500 text-center">Back</Text>
         </Pressable>
       </ScrollView>
+      <FooterNavBar />
     </Layout>
   );
 }
