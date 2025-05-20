@@ -46,9 +46,6 @@ const handleLogout = async () => {
       <Pressable style={{ paddingVertical: 12 }} onPress={() => { onClose(); router.push(`/(app)/room/${defaultRoom}`); }}>
           <Text style={{ fontSize: 16 }}>Home</Text>
         </Pressable>
-        <Pressable style={{ paddingVertical: 12 }} onPress={() => { onClose(); router.push('/(app)/profile'); }}>
-          <Text style={{ fontSize: 16 }}>Profile</Text>
-        </Pressable>
         <Pressable style={{ paddingVertical: 12 }} onPress={() => { onClose(); router.push('/(app)/select-room'); }}>
           <Text style={{ fontSize: 16 }}>Select Room</Text>
         </Pressable>

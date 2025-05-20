@@ -3,6 +3,7 @@ import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator, Safe
 import { useAuth } from '../../src/store/authContext';
 import { router } from 'expo-router';
 import Layout from '../../src/components/Layout';
+import FooterNavBar from '../../src/components/Footer'; 
 const ProfilePage = () => {
   const { user, fetchUserData, userLoaded, updateProfile } = useAuth();
   const [editMode, setEditMode] = useState(false);
@@ -109,6 +110,7 @@ const ProfilePage = () => {
           )}
         </View>
       </ScrollView>
+      <FooterNavBar />
     </Layout>
   );
 };
