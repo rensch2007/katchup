@@ -84,7 +84,39 @@ console.log('[DEBUG] newPost:', newPost);
 
     await newPost.save();
     console.log('[POST] Saved post successfully:', newPost);
-    
+    const Room = require('../models/Room');
+const dayjs = require('dayjs');
+
+const today = dayjs().format('YYYY-MM-DD');
+const room = await Room.findById(roomId);
+
+if (!room) {
+  console.error('[POST ERROR] Room not found');
+  return res.status(404).json({ success: false, message: 'Room not found' });
+}
+
+const postsToday = room.katchupPostsToday.filter(p => p.date === today);
+
+// ✅ NEW: scaled max post limit based on member count
+const memberCount = room.members.length;
+const maxPosts = Math.min(3 + Math.floor(memberCount / 2), 7);
+
+if (postsToday.length < maxPosts) {
+  // determine point value — highest only
+  let point = 1;
+  if (images && images.length > 0) point = 3;
+  else if (musicTrackId) point = 2;
+  else if (location) point = 2;
+
+  room.katchupPoints += point;
+  room.katchupPostsToday.push({ userId: createdBy, date: today });
+
+  await room.save();
+  console.log(`[KATCHUP] Added ${point} points to Room ${roomId} (${postsToday.length + 1}/${maxPosts})`);
+} else {
+  console.log(`[KATCHUP] Room ${roomId} already reached daily post cap (${maxPosts})`);
+}
+
     // Trigger streak logic
     updateRoomStreakIfEligible({
       userId: createdBy,

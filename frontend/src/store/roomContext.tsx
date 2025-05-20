@@ -37,6 +37,18 @@ export type Room = {
     userIds: string[];
   }[];
   cutoffHourKST?: number;
+  tamagotchi?: {
+    stage: 'seed' | 'sprout' | 'tomato' | 'bottle';
+    character: string;
+    stats: {
+      hunger: number;
+      happiness: number;
+      thirst: number;
+    };
+    daysSurvived: number;
+    deathCount: number;
+    evolutionStreak: number;
+  };
 };
 
 

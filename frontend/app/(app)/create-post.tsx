@@ -315,7 +315,7 @@ export default function CreatePost() {
         className="flex-1"
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView className="flex-1 p-4" ref={scrollViewRef} keyboardShouldPersistTaps="handled">
+          <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 120 }} ref={scrollViewRef} keyboardShouldPersistTaps="handled">
             <View className="flex-row items-center mb-6">
               <View className="flex-1 h-px bg-gray-200" />
               <Text className="text-sm text-gray-500">
