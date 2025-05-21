@@ -42,8 +42,16 @@ export default function TamagotchiModal({ visible, onClose }: { visible: boolean
   const roomId = currentRoom?._id;
 
   const hungerAnim = useRef(new Animated.Value(0)).current;
-  const happinessAnim = useRef(new Animated.Value(0)).current;
-  const thirstAnim = useRef(new Animated.Value(0)).current;
+const happinessAnim = useRef(new Animated.Value(0)).current;
+const thirstAnim = useRef(new Animated.Value(0)).current;
+
+useEffect(() => {
+  if (tamagotchi?.stats) {
+    hungerAnim.setValue(tamagotchi.stats.hunger);
+    happinessAnim.setValue(tamagotchi.stats.happiness);
+    thirstAnim.setValue(tamagotchi.stats.thirst);
+  }
+}, [tamagotchi]);
 
   useEffect(() => {
     if (visible && roomId) {
@@ -70,25 +78,28 @@ export default function TamagotchiModal({ visible, onClose }: { visible: boolean
     }
   }, [visible]);
 
-  useEffect(() => {
-    if (tamagotchi) {
-      Animated.timing(hungerAnim, {
-        toValue: tamagotchi.stats.hunger,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-      Animated.timing(happinessAnim, {
-        toValue: tamagotchi.stats.happiness,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-      Animated.timing(thirstAnim, {
-        toValue: tamagotchi.stats.thirst,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [tamagotchi]);
+useEffect(() => {
+  if (tamagotchi?.stats) {
+    Animated.timing(hungerAnim, {
+      toValue: tamagotchi.stats.hunger,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+
+    Animated.timing(happinessAnim, {
+      toValue: tamagotchi.stats.happiness,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+
+    Animated.timing(thirstAnim, {
+      toValue: tamagotchi.stats.thirst,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }
+}, [tamagotchi?.stats]);
+
 
 const handlePress = async (label: string) => {
   if (!roomId) return;
@@ -109,9 +120,22 @@ const handlePress = async (label: string) => {
 };
 
 
-  const renderStatBar = (label: string, animValue: Animated.Value, color: string) => (
+  const renderStatBar = (label: string, animValue: Animated.Value, color: string) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    const listener = animValue.addListener(({ value }) => {
+      setDisplayValue(Math.round(value));
+    });
+    return () => animValue.removeListener(listener);
+  }, [animValue]);
+
+  return (
     <View key={label} style={{ marginBottom: 12, width: '100%' }}>
-      <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 4 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+        <Text style={{ fontSize: 13, fontWeight: '600' }}>{label}</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600' }}>{displayValue}%</Text>
+      </View>
       <View style={{ height: 14, backgroundColor: '#F3F4F6', borderRadius: 8 }}>
         <Animated.View
           style={{
@@ -127,6 +151,8 @@ const handlePress = async (label: string) => {
       </View>
     </View>
   );
+};
+
 
   return (
     <Modal visible={visible} transparent animationType="fade">
