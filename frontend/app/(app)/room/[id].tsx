@@ -85,7 +85,8 @@ export default function RoomDetailScreen() {
     };
   };
 
-  const evoProgress = getBlendedEvolutionProgress(currentRoom?.tamagotchi);
+  const evoProgress = getBlendedEvolutionProgress(currentRoom?.tamagotchi?.main);
+
 
 
   const [postedUserIds, setPostedUserIds] = useState<string[]>([]);

@@ -37,19 +37,40 @@ export type Room = {
     userIds: string[];
   }[];
   cutoffHourKST?: number;
+
   tamagotchi?: {
-    stage: 'seed' | 'sprout' | 'tomato' | 'bottle';
-    character: string;
-    stats: {
-      hunger: number;
-      happiness: number;
-      thirst: number;
+    main: {
+      stage: 'seed' | 'sprout' | 'tomato' | 'bottle';
+      character: string;
+      stats: {
+        hunger: number;
+        happiness: number;
+        thirst: number;
+      };
+      daysSurvived: number;
+      deathCount: number;
+      evolutionStreak: number;
+      lastDecayDate: string | null;
     };
-    daysSurvived: number;
-    deathCount: number;
-    evolutionStreak: number;
+    currentGrowingFriend?: {
+      name: string;
+      stage: 'seed' | 'sprout' | 'tomato' | 'bottle';
+      stats: {
+        hunger: number;
+        happiness: number;
+        thirst: number;
+      };
+      daysSurvived: number;
+      evolutionStreak: number;
+      lastDecayDate: string | null;
+    };
+    friends?: {
+      name: string;
+      social: number;
+    }[];
   };
 };
+
 
 
 type RoomContextType = {
